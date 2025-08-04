@@ -1021,6 +1021,138 @@ class DriveService {
     };
     document.addEventListener('keydown', handleEscape);
   }
+
+  // Save PDF file to Google Drive
+  async savePDFFile(filename, pdfBlob, folderPath) {
+    try {
+      console.log('=== SAVE PDF DEBUG START ===');
+      console.log('Saving PDF to Drive:', filename, 'in folder:', folderPath);
+      console.log('PDF blob size:', pdfBlob.size);
+      
+      // Ensure app folder exists
+      if (!this.appFolderId) {
+        console.log('App folder ID not set, ensuring app folder exists...');
+        await this.ensureAppFolder();
+        console.log('App folder ID after ensure:', this.appFolderId);
+      }
+
+      // Navigate to the correct folder path
+      let currentFolderId = this.appFolderId;
+      const pathParts = folderPath.split('/').filter(part => part.trim() !== '');
+      console.log('Path parts:', pathParts);
+      
+      // Skip the first part if it's the app folder name
+      const startIndex = pathParts[0] === this.appFolderName ? 1 : 0;
+      console.log('Starting at index:', startIndex);
+      
+      for (let i = startIndex; i < pathParts.length; i++) {
+        const folderName = pathParts[i];
+        console.log(`Ensuring subfolder: ${folderName} in parent: ${currentFolderId}`);
+        currentFolderId = await this.ensureSubfolder(currentFolderId, folderName);
+        console.log(`Subfolder ${folderName} ID:`, currentFolderId);
+      }
+
+      console.log('Final target folder ID:', currentFolderId);
+
+      // Check if file already exists
+      console.log('Checking if file already exists...');
+      const existingFile = await this.findFileInFolder(filename, currentFolderId);
+      if (existingFile) {
+        console.log('PDF file already exists, will UPDATE:', existingFile.id);
+        console.log('Existing file details:', existingFile);
+      } else {
+        console.log('PDF file does not exist, will CREATE new file');
+      }
+
+      if (existingFile) {
+        console.log('=== TAKING UPDATE PATH ===');
+        // For updates, we need to use a different approach
+        // First update the file content without changing parents
+        const updateMetadata = {
+          name: filename,
+          mimeType: 'application/pdf'
+          // Don't include parents for updates - it causes the error
+        };
+        console.log('Update metadata (NO PARENTS):', updateMetadata);
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(updateMetadata)], { type: 'application/json' }));
+        form.append('file', pdfBlob);
+
+        const updateUrl = `${this.uploadUrl}/files/${existingFile.id}?uploadType=multipart`;
+        console.log('Update URL:', updateUrl);
+        console.log('Update method: PATCH');
+
+        const response = await fetch(updateUrl, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          },
+          body: form
+        });
+
+        console.log('Update response status:', response.status);
+        console.log('Update response ok:', response.ok);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('PDF update failed with response:', errorText);
+          throw new Error(`PDF update failed: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('PDF updated successfully:', result);
+        console.log('=== SAVE PDF DEBUG END (UPDATE SUCCESS) ===');
+        return result;
+
+      } else {
+        console.log('=== TAKING CREATE PATH ===');
+        // For new files, we can include parents
+        const createMetadata = {
+          name: filename,
+          parents: [currentFolderId],
+          mimeType: 'application/pdf'
+        };
+        console.log('Create metadata (WITH PARENTS):', createMetadata);
+
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(createMetadata)], { type: 'application/json' }));
+        form.append('file', pdfBlob);
+
+        const createUrl = `${this.uploadUrl}/files?uploadType=multipart`;
+        console.log('Create URL:', createUrl);
+        console.log('Create method: POST');
+
+        const response = await fetch(createUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          },
+          body: form
+        });
+
+        console.log('Create response status:', response.status);
+        console.log('Create response ok:', response.ok);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('PDF creation failed with response:', errorText);
+          throw new Error(`PDF creation failed: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('PDF created successfully:', result);
+        console.log('=== SAVE PDF DEBUG END (CREATE SUCCESS) ===');
+        return result;
+      }
+    } catch (error) {
+      console.error('=== SAVE PDF DEBUG ERROR ===');
+      console.error('Error saving PDF to Drive:', error);
+      console.error('Error stack:', error.stack);
+      console.error('=== SAVE PDF DEBUG END (ERROR) ===');
+      throw error;
+    }
+  }
 }
 
 export default DriveService;

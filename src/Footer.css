@@ -1,6 +1,5 @@
 .worksheet-footer {
   position: absolute;
-  bottom: 24px; /* 1/4 inch from bottom edge (24px = 1/4 inch at 96 DPI) */
   left: 24px; /* 1/4 inch from left edge */
   right: 24px; /* 1/4 inch from right edge */
   display: flex;
@@ -8,17 +7,25 @@
   font-size: 8pt; /* 8 point font as requested */
   font-family: Arial, sans-serif;
   z-index: 5;
-  color: #666; /* Changed to gray to test if changes are being applied */
+  color: #666;
 }
 
-/* Second page footer positioning */
+/* First page footer positioning - at bottom of page 1 */
+.worksheet-footer:not(.page-2) {
+  top: 1020px;/* top: 1032px; 24px from bottom of first page (1056px - 24px = 1032px) */
+}
+
+/* Second page footer positioning - at bottom of page 2 */
 .worksheet-footer.page-2 {
-  top: 2088px; /* 24px from bottom of second page (2112px - 24px = 2088px) */
-  bottom: auto; /* Override bottom positioning */
+  top: 2076px; /* 24px from bottom of second page (2112px - 24px = 2088px) */
 }
 
 .footer-left {
   text-align: left;
+}
+
+.footer-center {
+  text-align: center;
 }
 
 .footer-right {

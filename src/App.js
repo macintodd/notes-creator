@@ -1,6 +1,8 @@
 // App.js
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import WorksheetCanvas from './WorksheetCanvas';
 import ModePicker from './ModePicker';
 import AssetManager from './AssetManager';
@@ -654,6 +656,299 @@ function AppContent() {
     }
   };
 
+  // PDF Export functionality
+  const handleExportPDF = async (headerInfo) => {
+    try {
+      console.log('=== PDF EXPORT DEBUG INFO ===');
+      console.log('handleExportPDF called with header:', headerInfo);
+      console.log('driveService:', driveService);
+      console.log('driveServiceRef.current:', driveServiceRef.current);
+      
+      // Find the worksheet canvas element
+      const worksheetElement = document.querySelector('.worksheet-canvas');
+      if (!worksheetElement) {
+        throw new Error('Worksheet canvas not found');
+      }
+
+      // Create a clone of the worksheet to modify for PDF export
+      const clonedElement = worksheetElement.cloneNode(true);
+      
+      // Hide grid lines and drag handles in the cloned element
+      const style = document.createElement('style');
+      style.textContent = `
+        /* Hide UI elements that shouldn't appear in PDF */
+        .pdf-export-clone .grid-line { display: none !important; }
+        .pdf-export-clone .drag-handle { display: none !important; }
+        .pdf-export-clone .resize-handle { display: none !important; }
+        .pdf-export-clone .table-wrapper .drag-handle { display: none !important; }
+        .pdf-export-clone .text-box .drag-handle { display: none !important; }
+        .pdf-export-clone .table-drag-handle { display: none !important; }
+        .pdf-export-clone .grid-lines { display: none !important; }
+        .pdf-export-clone .page-break { display: none !important; }
+        .pdf-export-clone .page-break::before { display: none !important; }
+        .pdf-export-clone .border-menu { display: none !important; }
+        
+        /* Clean up worksheet canvas */
+        .pdf-export-clone .worksheet-canvas { 
+          background-image: none !important; 
+          border: none !important; 
+          box-shadow: none !important; 
+          background-color: white !important;
+        }
+        
+        /* Remove borders from text boxes only (not tables) */
+        .pdf-export-clone .text-box { 
+          border: none !important; 
+          box-shadow: none !important; 
+          outline: none !important; 
+        }
+        
+        /* Target text boxes more aggressively - override inline styles */
+        .pdf-export-clone .react-rnd:not(.table-wrapper) > div {
+          border: none !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+        
+        /* Additional targeting for any div that might be a text box */
+        .pdf-export-clone div[contenteditable] {
+          border: none !important;
+        }
+        
+        /* Target divs with cursor move (text boxes when not editing) */
+        .pdf-export-clone div[style*="cursor: move"] {
+          border: none !important;
+        }
+        
+        /* Target divs with cursor text (text boxes when editing) */
+        .pdf-export-clone div[style*="cursor: text"] {
+          border: none !important;
+        }
+        
+        /* Remove borders from react-rnd wrappers for text boxes only */
+        .pdf-export-clone .react-rnd:not(.table-wrapper) { 
+          border: none !important; 
+          box-shadow: none !important; 
+          outline: none !important; 
+        }
+        
+        .pdf-export-clone .react-rnd:not(.table-wrapper) > div { 
+          border: none !important; 
+          box-shadow: none !important; 
+          outline: none !important; 
+        }
+        
+        /* Keep table cell borders but remove selection styling */
+        .pdf-export-clone .table-block.selected { 
+          box-shadow: none !important; 
+          outline: none !important;
+        }
+        
+        /* Remove only selection/focus borders, keep structural borders */
+        .pdf-export-clone .table-block { 
+          box-shadow: none !important; 
+          outline: none !important; 
+        }
+        
+        /* Preserve table cell borders (they use inline styles) but remove any CSS borders */
+        .pdf-export-clone .table-cell {
+          box-shadow: none !important;
+          outline: none !important;
+        }
+        
+        /* Remove borders from text boxes and UI elements, but preserve table structure */
+        .pdf-export-clone .text-box,
+        .pdf-export-clone .react-rnd:not(.table-wrapper),
+        .pdf-export-clone .react-rnd:not(.table-wrapper) > div,
+        .pdf-export-clone div[contenteditable],
+        .pdf-export-clone div[style*="cursor: move"]:not(.table-cell),
+        .pdf-export-clone div[style*="cursor: text"]:not(.table-cell) {
+          border: none !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Add class to cloned element for targeted styling
+      clonedElement.classList.add('pdf-export-clone');
+      
+      // Position the clone off-screen
+      clonedElement.style.position = 'absolute';
+      clonedElement.style.left = '-9999px';
+      clonedElement.style.top = '0';
+      
+      // Add to document temporarily
+      document.body.appendChild(clonedElement);
+
+      try {
+        // Capture the cloned element as canvas
+        const canvas = await html2canvas(clonedElement, {
+          scale: 2, // Higher resolution
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: 816, // Match worksheet width
+          height: 2112, // Match worksheet height (two pages)
+        });
+
+        // Create PDF with letter size dimensions
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'pt',
+          format: 'letter' // 8.5" x 11"
+        });
+
+        const pageWidth = 612; // Letter width in points (8.5")
+        const pageHeight = 792; // Letter height in points (11")
+        
+        // No extra margins - worksheet already has built-in 1/4 inch borders
+        // Calculate scaling to fit worksheet content to full page
+        const scaleX = pageWidth / 816; // 816px is worksheet width
+        const scaleY = pageHeight / 1056; // 1056px is single page height
+        const scale = Math.min(scaleX, scaleY);
+        
+        const finalWidth = 816 * scale;
+        const finalHeight = 1056 * scale;
+        
+        // Center the content on the page
+        const x = (pageWidth - finalWidth) / 2;
+        const y = (pageHeight - finalHeight) / 2;
+
+        // Create temporary canvases for each page
+        const pageCanvas1 = document.createElement('canvas');
+        const pageCanvas2 = document.createElement('canvas');
+        pageCanvas1.width = 816 * 2; // Match scale factor from html2canvas
+        pageCanvas1.height = 1056 * 2;
+        pageCanvas2.width = 816 * 2;
+        pageCanvas2.height = 1056 * 2;
+        
+        const ctx1 = pageCanvas1.getContext('2d');
+        const ctx2 = pageCanvas2.getContext('2d');
+        
+        // Draw first page (top half of original canvas)
+        ctx1.drawImage(canvas, 0, 0, canvas.width, canvas.height / 2, 0, 0, pageCanvas1.width, pageCanvas1.height);
+        
+        // Draw second page (bottom half of original canvas)
+        ctx2.drawImage(canvas, 0, canvas.height / 2, canvas.width, canvas.height / 2, 0, 0, pageCanvas2.width, pageCanvas2.height);
+        
+        // Add pages to PDF
+        const imgData1 = pageCanvas1.toDataURL('image/png');
+        pdf.addImage(imgData1, 'PNG', x, y, finalWidth, finalHeight);
+        
+        pdf.addPage();
+        const imgData2 = pageCanvas2.toDataURL('image/png');
+        pdf.addImage(imgData2, 'PNG', x, y, finalWidth, finalHeight);
+
+        // Generate filename
+        const filename = `Unit_${headerInfo.unit}_Lesson_${headerInfo.lesson}_${headerInfo.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+        // Show dialog for save options
+        const saveOption = await showPDFSaveDialog();
+        
+        if (saveOption === 'download') {
+          // Download directly
+          pdf.save(filename);
+        } else if (saveOption === 'drive') {
+          // Save to Google Drive
+          try {
+            const serviceToUse = driveService || driveServiceRef.current;
+            if (!serviceToUse) {
+              throw new Error('Google Drive service not available. Please log in again.');
+            }
+            
+            console.log('Creating PDF blob for Google Drive...');
+            const pdfBlob = pdf.output('blob');
+            console.log('PDF blob created, size:', pdfBlob.size);
+            
+            const folderPath = `Math Practice Creator/Unit ${headerInfo.unit}/Worksheet PDFs`;
+            console.log('Saving to folder path:', folderPath);
+            
+            await serviceToUse.savePDFFile(filename, pdfBlob, folderPath);
+            console.log('PDF saved to Google Drive successfully');
+            alert('PDF saved to Google Drive successfully!');
+          } catch (driveError) {
+            console.error('Google Drive save error:', driveError);
+            alert(`Failed to save to Google Drive: ${driveError.message}\n\nTrying download instead...`);
+            // Fallback to download
+            pdf.save(filename);
+          }
+        }
+
+      } finally {
+        // Clean up
+        document.body.removeChild(clonedElement);
+        document.head.removeChild(style);
+      }
+    } catch (error) {
+      console.error('PDF Export failed:', error);
+      alert(`Error creating PDF: ${error.message}. Please try again.`);
+    }
+  };
+
+  // Show PDF save dialog
+  const showPDFSaveDialog = () => {
+    return new Promise((resolve) => {
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `;
+      
+      dialog.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+          <h3 style="margin-bottom: 20px;">Save PDF</h3>
+          <p style="margin-bottom: 30px;">Choose how to save your worksheet PDF:</p>
+          <button id="pdf-download" style="margin: 0 10px; padding: 12px 24px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            Download to Computer
+          </button>
+          <button id="pdf-drive" style="margin: 0 10px; padding: 12px 24px; background: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            Save to Google Drive
+          </button>
+          <br><br>
+          <button id="pdf-cancel" style="margin-top: 10px; padding: 8px 16px; background: #ccc; color: #333; border: none; border-radius: 5px; cursor: pointer;">
+            Cancel
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      
+      const cleanup = () => document.body.removeChild(dialog);
+      
+      document.getElementById('pdf-download').onclick = () => {
+        cleanup();
+        resolve('download');
+      };
+      
+      document.getElementById('pdf-drive').onclick = () => {
+        cleanup();
+        resolve('drive');
+      };
+      
+      document.getElementById('pdf-cancel').onclick = () => {
+        cleanup();
+        resolve('cancel');
+      };
+      
+      // Close on background click
+      dialog.onclick = (e) => {
+        if (e.target === dialog) {
+          cleanup();
+          resolve('cancel');
+        }
+      };
+    });
+  };
+
   return (
     <div className="app-content">
       <WorksheetCanvas
@@ -687,6 +982,7 @@ function AppContent() {
           setCurrentHeader(headerData);
           worksheetRef.current?.handleHeaderChange(headerData);
         }}
+        onExportPDF={handleExportPDF}
       />
 
       <OverwriteDialog />

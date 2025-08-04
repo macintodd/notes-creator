@@ -417,6 +417,7 @@ export default function TableBlock({
                 borderBottom: '2px solid #000',
                 borderLeft: colIdx === 0 ? '2px solid #000' : 'none',
                 borderTop: '2px solid #000',
+                borderRight: '2px solid #000',
                 padding: 8,
                 background: '#fafcff',
                 position: 'relative',

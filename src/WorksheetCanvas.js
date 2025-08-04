@@ -736,6 +736,7 @@ export default class WorksheetCanvas extends Component {
         />
         <Footer 
           title={header.title}
+          isPage2={false}
         />
         <div className="page-break"></div>
         <Footer 

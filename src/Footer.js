@@ -7,6 +7,9 @@ export default function Footer({ title, isPage2 = false }) {
       <div className="footer-left">
         {title}
       </div>
+      <div className="footer-center">
+        {isPage2 ? 'Page 2' : 'Page 1'}
+      </div>
       <div className="footer-right">
         Mr. Todd
       </div>

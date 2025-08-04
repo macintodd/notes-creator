@@ -2,6 +2,8 @@
 import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { BlockMath, InlineMath } from 'react-katex';
 import TableTab from './TableTab';
+// import html2canvas from 'html2canvas';
+// import jsPDF from 'jspdf';
 import 'katex/dist/katex.min.css';
 import './AssetManager.css';
 
@@ -19,7 +21,9 @@ const AssetManager = forwardRef(({
   snapToGrid,
   onToggleSnap,
   currentHeader,
-  onHeaderChange
+  onHeaderChange,
+  // PDF export props
+  onExportPDF
 }, ref) => {
   const [activeTab, setActiveTab] = useState('Text');
   const [problemSets, setProblemSets] = useState(new Map());
@@ -35,6 +39,29 @@ const AssetManager = forwardRef(({
   const [lessonTitle, setLessonTitle] = useState('Lesson Title');
   const [isSaving, setIsSaving] = useState(false);
   const [isUserEditing, setIsUserEditing] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  // PDF Export functionality
+  const handleExportPDF = async () => {
+    if (!onExportPDF) {
+      alert('PDF export is not available');
+      return;
+    }
+    
+    setIsExportingPDF(true);
+    try {
+      await onExportPDF({
+        unit: unitNumber,
+        lesson: lessonNumber,
+        title: lessonTitle
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Error creating PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   // Update local state when currentHeader prop changes (when document is loaded)
   // Only update if user is not currently editing to avoid overriding user input
@@ -60,6 +87,9 @@ const AssetManager = forwardRef(({
         break;
       case 'title':
         setLessonTitle(value);
+        break;
+      default:
+        // No action needed for unknown fields
         break;
     }
     
@@ -497,6 +527,13 @@ const AssetManager = forwardRef(({
                 disabled={!isLoggedIn}
               >
                 Load Worksheet
+              </button>
+              <button 
+                onClick={handleExportPDF}
+                className={`export-pdf-button ${isExportingPDF ? 'exporting' : ''}`}
+                disabled={isExportingPDF}
+              >
+                {isExportingPDF ? 'Creating PDF...' : 'Export PDF'}
               </button>
             </div>
           </div>

@@ -51,13 +51,56 @@
   z-index: 1;
 }
 
-.page-break::before {
-  content: "Page 2";
-  position: absolute;
-  right: 10px;
-  top: -12px;
-  font-size: 10px;
-  color: #666;
-  background: white;
-  padding: 0 5px;
+/* PDF Export Mode - Hide grid lines and drag handles */
+.pdf-export-clone .grid-line {
+  display: none !important;
+}
+
+.pdf-export-clone .grid-lines {
+  display: none !important;
+}
+
+.pdf-export-clone .drag-handle {
+  display: none !important;
+}
+
+.pdf-export-clone .table-drag-handle {
+  display: none !important;
+}
+
+.pdf-export-clone .resize-handle {
+  display: none !important;
+}
+
+.pdf-export-clone .table-wrapper .drag-handle {
+  display: none !important;
+}
+
+.pdf-export-clone .text-box .drag-handle {
+  display: none !important;
+}
+
+.pdf-export-clone .worksheet-canvas {
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.pdf-export-clone .page-break {
+  display: none !important;
+}
+
+.pdf-export-clone .page-break::before {
+  display: none !important;
+}
+
+/* Hide any React DnD overlay elements for text boxes only */
+.pdf-export-clone .react-rnd:not(.table-wrapper) {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.pdf-export-clone .react-rnd:not(.table-wrapper):hover {
+  border: none !important;
+  box-shadow: none !important;
 }
