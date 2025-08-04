@@ -1,0 +1,26 @@
+/* TableBlock.css */
+
+.table-block {
+  background-color: white;
+  transition: box-shadow 0.2s;
+}
+
+.table-block.selected {
+  box-shadow: 0 0 0 2px #4a90e2;
+}
+
+.table-cell {
+  background-color: #fff;
+}
+.table-wrapper {
+  pointer-events: auto;
+}
+
+.table-drag-handle {
+  font-family: sans-serif;
+  user-select: none;
+}
+.table-drag-handle.selected-tab {
+  background-color: #8fbc8f;
+  color: white;
+}

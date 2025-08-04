@@ -1,0 +1,19 @@
+.worksheet-header {
+  position: absolute;
+  top: 24px; /* Aligns with first grid line (matches gridSize) */
+  left: 24px; /* 1/4 inch from left edge */
+  right: 24px; /* 1/4 inch from right edge */
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  z-index: 5;
+}
+
+.header-left {
+  font-weight: bold;
+}
+
+.header-right {
+  text-align: right;
+}

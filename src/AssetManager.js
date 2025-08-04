@@ -1,0 +1,414 @@
+// AssetManager.js
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import { BlockMath, InlineMath } from 'react-katex';
+import TableTab from './TableTab';
+import 'katex/dist/katex.min.css';
+import './AssetManager.css';
+
+const AssetManager = forwardRef(({ onDragStart, onPlaceTable, usedProblems }, ref) => {
+  const [activeTab, setActiveTab] = useState('Text');
+  const [problemSets, setProblemSets] = useState(new Map());
+  const [problemSetsJson, setProblemSetsJson] = useState(new Map()); // Store JSON for each set
+  const [currentSet, setCurrentSet] = useState(null);
+  const [selectedProblems, setSelectedProblems] = useState(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
+  const [jsonText, setJsonText] = useState(''); // Current JSON being edited
+
+  const textPresets = [
+    {
+      id: 'text',
+      label: 'Text',
+      style: 'text',
+      preview: 'Text',
+      fontSize: '10pt',
+      fontWeight: 'normal',
+      fontStyle: 'normal'
+    },
+    {
+      id: 'directions',
+      label: 'Directions',
+      style: 'directions',
+      preview: 'Directions',
+      fontSize: '10pt',
+      fontWeight: 'bold',
+      fontStyle: 'italic'
+    },
+    {
+      id: 'emphasis',
+      label: 'Emphasis',
+      style: 'emphasis',
+      preview: 'Emphasis',
+      fontSize: '12pt',
+      fontWeight: 'bold',
+      fontStyle: 'normal'
+    },
+    {
+      id: 'hints',
+      label: 'Hints',
+      style: 'hints',
+      preview: 'Hints',
+      fontSize: '8pt',
+      fontWeight: 'normal',
+      fontStyle: 'normal'
+    }
+  ];
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    
+    try {
+      const pastedData = JSON.parse(pastedText);
+      const [[setName, problems]] = Object.entries(pastedData);
+      
+      // Update both the problem sets and store the JSON
+      setProblemSets(prev => new Map(prev).set(setName, problems));
+      setProblemSetsJson(prev => new Map(prev).set(setName, pastedText));
+      setCurrentSet(setName);
+      setJsonText(pastedText); // Show the pasted JSON in the textarea
+      setSelectedProblems(new Set()); // Clear selection when new set is pasted
+      setLastSelectedIndex(null);
+    } catch (error) {
+      console.error('Invalid problem set format:', error);
+    }
+  };
+
+  const handleJsonChange = (e) => {
+    const newJsonText = e.target.value;
+    setJsonText(newJsonText);
+    
+    // Try to parse and update the problem list in real-time
+    if (newJsonText.trim()) {
+      try {
+        const parsedData = JSON.parse(newJsonText);
+        const [[setName, problems]] = Object.entries(parsedData);
+        
+        // Update the problem set if valid JSON
+        setProblemSets(prev => new Map(prev).set(setName, problems));
+        setProblemSetsJson(prev => new Map(prev).set(setName, newJsonText));
+        
+        // If the set name changed, update current set
+        if (setName !== currentSet) {
+          setCurrentSet(setName);
+        }
+        
+        setSelectedProblems(new Set()); // Clear selection when JSON changes
+        setLastSelectedIndex(null);
+      } catch (error) {
+        // Invalid JSON - just update the text, don't update problem list
+        // This allows users to edit while typing without breaking
+        console.log('JSON parsing in progress...', error.message);
+      }
+    }
+  };
+
+  const handleSetChange = (setName) => {
+    setCurrentSet(setName);
+    setSelectedProblems(new Set()); // Clear selection when switching sets
+    setLastSelectedIndex(null);
+    
+    // Load the JSON for this set into the textarea
+    const setJson = problemSetsJson.get(setName) || '';
+    setJsonText(setJson);
+  };
+
+  const handleProblemDragStart = (e, problem, index) => {
+    // If the dragged item isn't selected, select only it
+    let actualSelectedProblems;
+    if (!selectedProblems.has(index)) {
+      actualSelectedProblems = new Set([index]);
+      setSelectedProblems(actualSelectedProblems);
+    } else {
+      actualSelectedProblems = selectedProblems;
+    }
+    
+    // Get all selected problems
+    const currentProblems = problemSets.get(currentSet);
+    const selectedIndices = Array.from(actualSelectedProblems).sort((a, b) => a - b);
+    const selectedProblemData = selectedIndices.map(idx => currentProblems[idx]);
+    
+    // Create custom drag preview showing only selected problems
+    const dragPreview = document.createElement('div');
+    dragPreview.className = 'problem-drag-preview';
+    dragPreview.style.cssText = `
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+      background: white;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 14px;
+      font-weight: bold;
+      color: #4a90e2;
+      z-index: 10000;
+      pointer-events: none;
+    `;
+    
+    if (selectedProblemData.length === 1) {
+      dragPreview.textContent = 'Dragging 1 problem';
+    } else {
+      dragPreview.textContent = `Dragging ${selectedProblemData.length} problems`;
+    }
+    
+    document.body.appendChild(dragPreview);
+    
+    // Set the custom drag image
+    e.dataTransfer.setDragImage(dragPreview, 50, 20);
+    
+    // Clean up the preview element after a short delay
+    setTimeout(() => {
+      if (document.body.contains(dragPreview)) {
+        document.body.removeChild(dragPreview);
+      }
+    }, 100);
+    
+    e.dataTransfer.setData('application/problem', JSON.stringify({
+      type: 'problems',
+      content: selectedProblemData,
+      problemSetName: currentSet,
+      originalIndices: selectedIndices // Include original indices for reference
+    }));
+  };
+
+  const handleProblemClick = (index, event) => {
+    const isCmd = event.metaKey || event.ctrlKey;
+    const isShift = event.shiftKey;
+    
+    if (isShift && lastSelectedIndex !== null) {
+      // Range selection
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      const newSelection = new Set(selectedProblems);
+      
+      for (let i = start; i <= end; i++) {
+        newSelection.add(i);
+      }
+      setSelectedProblems(newSelection);
+    } else if (isCmd) {
+      // Toggle selection
+      const newSelection = new Set(selectedProblems);
+      if (newSelection.has(index)) {
+        newSelection.delete(index);
+      } else {
+        newSelection.add(index);
+      }
+      setSelectedProblems(newSelection);
+      setLastSelectedIndex(index);
+    } else {
+      // Single selection
+      setSelectedProblems(new Set([index]));
+      setLastSelectedIndex(index);
+    }
+  };
+
+  const handleTextDragStart = (preset, e) => {
+    // Define actual text content for each preset type
+    const textContent = {
+      text: 'Click to edit text',
+      directions: 'Directions: Solve each of the following showing applicable work. Circle Final Answer.',
+      emphasis: 'Important Note',
+      hints: 'Hint: Remember to check your work'
+    };
+
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      type: 'text',
+      style: preset.style,
+      text: textContent[preset.style] || preset.label
+    }));
+  };
+
+  const RenderEquation = ({ equation }) => {
+    // Handle pure LaTeX (starts and ends with $$)
+    if (equation.startsWith('$$') && equation.endsWith('$$')) {
+      return <BlockMath math={equation.slice(2, -2)} />;
+    }
+    
+    // Handle mixed content (text with embedded $$...$$)
+    const parts = [];
+    let lastIndex = 0;
+    let partKey = 0;
+    
+    // Find all $$....$$ patterns
+    const latexPattern = /\$\$(.*?)\$\$/g;
+    let match;
+    
+    while ((match = latexPattern.exec(equation)) !== null) {
+      // Add text before the LaTeX
+      if (match.index > lastIndex) {
+        const textBefore = equation.slice(lastIndex, match.index);
+        parts.push(<span key={partKey++}>{textBefore}</span>);
+      }
+      
+      // Add the LaTeX part
+      const latexContent = match[1];
+      parts.push(<InlineMath key={partKey++} math={latexContent} />);
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add any remaining text after the last LaTeX
+    if (lastIndex < equation.length) {
+      const textAfter = equation.slice(lastIndex);
+      parts.push(<span key={partKey++}>{textAfter}</span>);
+    }
+    
+    // If no LaTeX was found, just return the text
+    if (parts.length === 0) {
+      return <span>{equation}</span>;
+    }
+    
+    return <span>{parts}</span>;
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Text':
+        return (
+          <div className="text-presets">
+            {textPresets.map(preset => (
+              <div
+                key={preset.id}
+                className={`text-preset-box ${preset.id}`}
+                draggable
+                onDragStart={(e) => handleTextDragStart(preset, e)}
+                style={{
+                  fontSize: preset.fontSize,
+                  fontWeight: preset.fontWeight,
+                  fontStyle: preset.fontStyle
+                }}
+              >
+                <div className="text-preset-label">{preset.label}</div>
+                <div className="text-preset-preview">{preset.preview}</div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'Problems':
+        return (
+          <div className="problem-content">
+            <textarea 
+              className="paste-area"
+              placeholder="Paste or edit problem set JSON here..."
+              value={jsonText}
+              onChange={handleJsonChange}
+              onPaste={handlePaste}
+            />
+            <div className="problem-instructions">
+              <small>
+                Paste JSON or edit above • Click to select • Shift+click for range • Cmd+click to toggle
+              </small>
+            </div>
+            {problemSets.size > 0 && (
+              <select 
+                className="set-selector"
+                value={currentSet || ''} 
+                onChange={(e) => handleSetChange(e.target.value)}
+              >
+                <option value="">Select a Set</option>
+                {Array.from(problemSets.keys()).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            )}
+            {currentSet && problemSets.has(currentSet) && (
+              <>
+                {selectedProblems.size > 0 && (
+                  <div className="selection-info">
+                    {selectedProblems.size} problem{selectedProblems.size !== 1 ? 's' : ''} selected
+                  </div>
+                )}
+                <div className="problem-list">
+                  {problemSets.get(currentSet).map((problem, index) => {
+                    const problemId = `${currentSet}_${index}`;
+                    const isUsed = usedProblems && usedProblems.includes(problemId);
+                    return (
+                      <div
+                        key={index}
+                        className={`problem-item ${selectedProblems.has(index) ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleProblemDragStart(e, problem, index)}
+                        onClick={(e) => handleProblemClick(index, e)}
+                      >
+                        <RenderEquation equation={problem} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      case 'Images':
+        return <div className="image-content">Image content here</div>;
+      case 'Graphs':
+        return <div className="graph-content">Graph content here</div>;
+      case 'Tables':
+        return <TableTab onPlaceTable={onPlaceTable} />;
+      default:
+        return null;
+    }
+  };
+
+  // Expose methods through ref
+  useImperativeHandle(ref, () => ({
+    exportProblemSets: () => {
+      // Convert Map to plain object for JSON serialization
+      const problemSetsObj = {};
+      for (const [setName, problems] of problemSets) {
+        problemSetsObj[setName] = problems;
+      }
+      return problemSetsObj;
+    },
+    
+    loadProblemSets: (problemSetsData) => {
+      // Load problem sets from data (for loading worksheets)
+      setProblemSets(new Map(Object.entries(problemSetsData)));
+      
+      // Also update JSON text state
+      const newJsonMap = new Map();
+      for (const [setName, problems] of Object.entries(problemSetsData)) {
+        newJsonMap.set(setName, JSON.stringify({ [setName]: problems }, null, 2));
+      }
+      setProblemSetsJson(newJsonMap);
+      
+      // If there's a current set, update the JSON text
+      if (currentSet && problemSetsData[currentSet]) {
+        setJsonText(JSON.stringify({ [currentSet]: problemSetsData[currentSet] }, null, 2));
+      }
+    },
+
+    // Legacy methods for compatibility
+    saveProblemSetsToFile: async () => {
+      // This can be implemented later for backward compatibility if needed
+      console.log('Legacy saveProblemSetsToFile called - this should be replaced with new save system');
+    },
+    
+    loadProblemSetsFromFile: async () => {
+      // This can be implemented later for backward compatibility if needed  
+      console.log('Legacy loadProblemSetsFromFile called - this should be replaced with new load system');
+    }
+  }));
+
+  return (
+    <div className="asset-manager">
+      <div className="asset-tabs">
+        {['Text', 'Images', 'Graphs', 'Tables', 'Problems'].map(tab => (
+          <button
+            key={tab}
+            className={`asset-tab ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      <div className="asset-content">
+        {renderContent()}
+      </div>
+    </div>
+  );
+});
+
+export default AssetManager;

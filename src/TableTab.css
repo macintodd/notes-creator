@@ -1,0 +1,78 @@
+/* TableTab.css */
+.table-tab {
+  padding: 10px;
+}
+
+.table-tab-section {
+  margin-bottom: 12px;
+}
+
+.label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.column-buttons,
+.size-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.column-buttons button,
+.size-buttons button {
+  padding: 6px 12px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background-color: #f8f8f8;
+  cursor: pointer;
+}
+
+button.active {
+  background-color: #4a90e2;
+  color: white;
+  border-color: #357abd;
+}
+
+.table-preview-wrapper {
+  position: relative;
+  border: 1px dashed #999;
+  margin-top: 12px;
+  padding: 6px;
+  cursor: pointer;
+  user-select: none;
+  background-color: #fafafa;
+}
+
+.table-preview {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  border: 1px solid #ccc;
+}
+
+.preview-cell {
+  border-right: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  background-color: #f0f0f0;
+}
+
+.preview-cell:last-child {
+  border-right: none;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: #666;
+  pointer-events: none;
+}
+.preview-cell {
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  height: 100%;
+}

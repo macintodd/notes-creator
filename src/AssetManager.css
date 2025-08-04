@@ -1,0 +1,250 @@
+/* AssetManager.css */
+
+.asset-manager {
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  width: 250px;
+  height: 500px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* Updated tab layout to wrap into two rows */
+.asset-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 6px;
+  gap: 6px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #ddd;
+  justify-content: flex-start;
+}
+
+.asset-tab {
+  flex: 0 0 calc(50% - 6px); /* Two tabs per row */
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s, color 0.3s;
+  background-color: #eee;
+  border: none;
+}
+
+.asset-tab:nth-child(odd) {
+  margin-left: 6px; /* Slight offset for odd (first in row) */
+}
+
+.asset-tab.active {
+  background-color: #4a90e2;
+  color: white;
+  font-weight: bold;
+}
+
+.asset-tab:hover {
+  background-color: #ddd;
+}
+
+.asset-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Text presets specific styles */
+.text-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  margin-top: 8px;
+}
+
+.text-preset-box {
+  padding: 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s, border-color 0.2s;
+  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-preset-box:hover {
+  background: #e5e5e5;
+  border-color: #bbb;
+}
+
+.text-preset-box:active {
+  cursor: grabbing;
+}
+
+.text-preset-label {
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.text-preset-preview {
+  color: #333;
+  text-align: center;
+}
+
+/* Specific styles for each text type */
+.text-preset-box.text .text-preset-preview {
+  font-size: 10pt;
+  font-weight: normal;
+  font-style: normal;
+}
+
+.text-preset-box.directions .text-preset-preview {
+  font-size: 10pt;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.text-preset-box.emphasis .text-preset-preview {
+  font-size: 12pt;
+  font-weight: bold;
+  font-style: normal;
+}
+
+.text-preset-box.hints .text-preset-preview {
+  font-size: 8pt;
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Problem set specific styles */
+.problem-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paste-area {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.5rem;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.problem-instructions {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.set-selector {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.selection-info {
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #1976d2;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.problem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  user-select: none; /* Prevent text selection during multi-select */
+}
+
+.problem-item {
+  padding: 8px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.problem-item:hover {
+  background: #e5e5e5;
+}
+
+.problem-item:active {
+  cursor: grabbing;
+}
+
+.problem-item:hover:not(.selected) {
+  background: #e5e5e5;
+}
+
+.problem-item.selected {
+  background: #d4edda;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+.problem-item.selected:hover {
+  background: #c3e6cb;
+}
+
+.problem-item.used {
+  background: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.problem-item.used:hover {
+  background: #f1b0b7;
+}
+
+.problem-item.used.selected {
+  background: #f5c6cb;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+/* Hide text presets in other tabs */
+.asset-content > *:not(.text-presets) .text-preset-box {
+  display: none;
+}
+
+/* Drag preview styling */
+.problem-drag-preview {
+  background: white !important;
+  border: 2px solid #4a90e2 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  color: #4a90e2 !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}

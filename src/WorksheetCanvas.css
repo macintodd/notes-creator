@@ -1,0 +1,38 @@
+/* WorksheetCanvas.css */
+
+.worksheet-canvas-container {
+  position: relative;
+  flex: 1;
+  background-color: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*.worksheet {
+  width: 816px;
+  height: 1056px;
+  background-color: white;
+  border: 1px solid black;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}*/
+.worksheet-canvas {
+  position: relative;
+  width: 816px; /* 8.5" * 96 dpi */
+  height: 1056px; /* 11" * 96 dpi */
+  background-color: white;
+  border: 1px solid black;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  overflow: visible; /* Ensure absolutely positioned children are visible */
+  transform-origin: top left; /* Help with zoom stability */
+  outline: none; /* Remove default focus outline for better UX */
+}
+
+/* Add specific positioning for the grid */
+.grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* Prevent grid from blocking interactions */
+}
