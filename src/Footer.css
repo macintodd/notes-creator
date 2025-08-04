@@ -1,0 +1,26 @@
+.worksheet-footer {
+  position: absolute;
+  bottom: 24px; /* 1/4 inch from bottom edge (24px = 1/4 inch at 96 DPI) */
+  left: 24px; /* 1/4 inch from left edge */
+  right: 24px; /* 1/4 inch from right edge */
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt; /* 8 point font as requested */
+  font-family: Arial, sans-serif;
+  z-index: 5;
+  color: #666; /* Changed to gray to test if changes are being applied */
+}
+
+/* Second page footer positioning */
+.worksheet-footer.page-2 {
+  top: 2088px; /* 24px from bottom of second page (2112px - 24px = 2088px) */
+  bottom: auto; /* Override bottom positioning */
+}
+
+.footer-left {
+  text-align: left;
+}
+
+.footer-right {
+  text-align: right;
+}

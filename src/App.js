@@ -4,15 +4,20 @@ import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import WorksheetCanvas from './WorksheetCanvas';
 import ModePicker from './ModePicker';
 import AssetManager from './AssetManager';
-import DocManager from './DocManager';
 import DriveService from './DriveService';
 import './App.css';
 import './ModePicker.css';
 import './WorksheetCanvas.css';
 import './AssetManager.css';
-import './DocManager.css';
 
 const CLIENT_ID = '348553692233-mfqod16j10n6tl3dvru9jk6chvff7mmq.apps.googleusercontent.com';
+
+// localStorage keys for persistence
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'math_practice_access_token',
+  USER_NAME: 'math_practice_user_name',
+  LOGIN_TIMESTAMP: 'math_practice_login_timestamp'
+};
 
 // Create inner component to use hooks
 function AppContent() {
@@ -29,7 +34,7 @@ function AppContent() {
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [usedProblems, setUsedProblems] = useState([]);
   const [modePickerPosition, setModePickerPosition] = useState({ x: 20, y: 20 });
-  const [docManagerPosition, setDocManagerPosition] = useState({ x: 20, y: 100 });
+  const [currentHeader, setCurrentHeader] = useState(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
@@ -42,6 +47,54 @@ function AppContent() {
   });
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState(null);
+
+  // Auto-login effect - check for stored authentication on app startup
+  useEffect(() => {
+    const initializeAuthFromStorage = async () => {
+      const storedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const storedUserName = localStorage.getItem(STORAGE_KEYS.USER_NAME);
+      const storedTimestamp = localStorage.getItem(STORAGE_KEYS.LOGIN_TIMESTAMP);
+
+      if (!storedToken || !storedUserName || !storedTimestamp) {
+        console.log('No stored authentication found');
+        return;
+      }
+
+      // Check if token is too old (older than 50 minutes, tokens expire in 1 hour)
+      const loginTime = parseInt(storedTimestamp);
+      const now = Date.now();
+      const fiftyMinutes = 50 * 60 * 1000;
+
+      if (now - loginTime > fiftyMinutes) {
+        console.log('Stored token is too old, clearing...');
+        clearStoredAuth();
+        return;
+      }
+
+      console.log('Found stored authentication, attempting to restore session...');
+
+      try {
+        // Test the stored token by creating and testing Drive service
+        const service = new DriveService(storedToken);
+        await service.testAccess();
+
+        // If successful, restore the session
+        setAccessToken(storedToken);
+        setUserName(storedUserName);
+        driveServiceRef.current = service;
+        setDriveService(service);
+        setIsLoggedIn(true);
+        
+        console.log('Session restored successfully from stored authentication');
+      } catch (error) {
+        console.error('Stored token is invalid, clearing:', error);
+        clearStoredAuth();
+      }
+    };
+
+    // Only run on initial mount
+    initializeAuthFromStorage();
+  }, []); // Empty dependency array = run once on mount
 
   // Persist currentFile to localStorage whenever it changes
   useEffect(() => {
@@ -117,6 +170,31 @@ function AppContent() {
     setUsedProblems(usedProblemsList || []);
   };
 
+  // Handler for when WorksheetCanvas updates header (e.g., during load)
+  const handleWorksheetHeaderChange = (headerData) => {
+    setCurrentHeader(headerData);
+  };
+
+  // Function to clear stored authentication data
+  const clearStoredAuth = () => {
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_NAME);
+    localStorage.removeItem(STORAGE_KEYS.LOGIN_TIMESTAMP);
+    console.log('Stored authentication data cleared');
+  };
+
+  // Function to logout user
+  const handleLogout = () => {
+    console.log('Logging out user...');
+    clearStoredAuth();
+    setIsLoggedIn(false);
+    setUserName('');
+    setAccessToken(null);
+    setDriveService(null);
+    driveServiceRef.current = null;
+    console.log('Logout completed');
+  };
+
   // Cleanup effect for component unmount
   useEffect(() => {
     return () => {
@@ -163,16 +241,25 @@ function AppContent() {
         setDriveService(service);
         console.log('Setting isLoggedIn to true...');
         setIsLoggedIn(true);
+        
+        // Store authentication data in localStorage for persistence
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokenResponse.access_token);
+        localStorage.setItem(STORAGE_KEYS.USER_NAME, userInfo.name);
+        localStorage.setItem(STORAGE_KEYS.LOGIN_TIMESTAMP, Date.now().toString());
+        console.log('Authentication data saved to localStorage');
+        
         console.log('Login process completed successfully');
         console.log('driveServiceRef.current:', driveServiceRef.current);
         
       } catch (error) {
         console.error('Auth error:', error);
+        clearStoredAuth(); // Clear any potentially bad stored data
         setIsLoggedIn(false);
       }
     },
     onError: (error) => {
       console.error('Login failed:', error);
+      clearStoredAuth(); // Clear any potentially bad stored data
       setIsLoggedIn(false);
     },
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile'
@@ -573,30 +660,10 @@ function AppContent() {
         ref={worksheetRef}
         snapToGrid={snapToGrid}
         zoom={zoom}
-        onHeaderChange={(headerData) => {
-          worksheetRef.current?.handleHeaderChange(headerData);
-        }}
+        onHeaderChange={handleWorksheetHeaderChange}
         onProblemUsed={handleProblemUsed}
         onLoadUsedProblems={handleLoadUsedProblems}
       />
-      <DocManager
-        position={docManagerPosition}
-        onDrag={(newPos) => setDocManagerPosition(newPos)}
-        isLoggedIn={isLoggedIn}
-        userName={userName}
-        onLogin={handleLogin}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        zoom={zoom}
-        setZoom={setZoom}
-        snapToGrid={snapToGrid}
-        onToggleSnap={() => setSnapToGrid(prev => !prev)}
-        onHeaderChange={(headerData) => {
-          worksheetRef.current?.handleHeaderChange(headerData);
-        }}
-        ref={problemSetRef}
-      />
-
       <AssetManager
         isVisible={isAssetManagerVisible}
         onPlaceTable={(config) => {
@@ -606,6 +673,20 @@ function AppContent() {
         }}
         usedProblems={usedProblems}
         ref={problemSetRef}
+        // DocManager props
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onSave={handleSave}
+        onLoad={handleLoad}
+        snapToGrid={snapToGrid}
+        onToggleSnap={() => setSnapToGrid(prev => !prev)}
+        currentHeader={currentHeader}
+        onHeaderChange={(headerData) => {
+          setCurrentHeader(headerData);
+          worksheetRef.current?.handleHeaderChange(headerData);
+        }}
       />
 
       <OverwriteDialog />

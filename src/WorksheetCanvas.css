@@ -20,7 +20,7 @@
 .worksheet-canvas {
   position: relative;
   width: 816px; /* 8.5" * 96 dpi */
-  height: 1056px; /* 11" * 96 dpi */
+  height: 2112px; /* 22" * 96 dpi (two 11" pages) */
   background-color: white;
   border: 1px solid black;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -35,4 +35,29 @@
   top: 0;
   left: 0;
   pointer-events: none; /* Prevent grid from blocking interactions */
+}
+
+/* Page break indicator */
+.page-break {
+  position: absolute;
+  top: 1056px; /* Exactly between the two pages */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ddd;
+  border-top: 1px dashed #999;
+  border-bottom: 1px dashed #999;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.page-break::before {
+  content: "Page 2";
+  position: absolute;
+  right: 10px;
+  top: -12px;
+  font-size: 10px;
+  color: #666;
+  background: white;
+  padding: 0 5px;
 }

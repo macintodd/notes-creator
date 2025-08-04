@@ -1,11 +1,26 @@
 // AssetManager.js
-import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { BlockMath, InlineMath } from 'react-katex';
 import TableTab from './TableTab';
 import 'katex/dist/katex.min.css';
 import './AssetManager.css';
 
-const AssetManager = forwardRef(({ onDragStart, onPlaceTable, usedProblems }, ref) => {
+const AssetManager = forwardRef(({ 
+  onDragStart, 
+  onPlaceTable, 
+  usedProblems,
+  // DocManager props
+  isLoggedIn,
+  userName,
+  onLogin,
+  onLogout,
+  onSave,
+  onLoad,
+  snapToGrid,
+  onToggleSnap,
+  currentHeader,
+  onHeaderChange
+}, ref) => {
   const [activeTab, setActiveTab] = useState('Text');
   const [problemSets, setProblemSets] = useState(new Map());
   const [problemSetsJson, setProblemSetsJson] = useState(new Map()); // Store JSON for each set
@@ -13,6 +28,76 @@ const AssetManager = forwardRef(({ onDragStart, onPlaceTable, usedProblems }, re
   const [selectedProblems, setSelectedProblems] = useState(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState(null);
   const [jsonText, setJsonText] = useState(''); // Current JSON being edited
+  
+  // DocManager state
+  const [unitNumber, setUnitNumber] = useState('0');
+  const [lessonNumber, setLessonNumber] = useState('0');
+  const [lessonTitle, setLessonTitle] = useState('Lesson Title');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUserEditing, setIsUserEditing] = useState(false);
+
+  // Update local state when currentHeader prop changes (when document is loaded)
+  // Only update if user is not currently editing to avoid overriding user input
+  useEffect(() => {
+    if (currentHeader && !isUserEditing) {
+      setUnitNumber(currentHeader.unit || '0');
+      setLessonNumber(currentHeader.lesson || '0');
+      setLessonTitle(currentHeader.title || 'Lesson Title');
+    }
+  }, [currentHeader, isUserEditing]);
+
+  // Helper function to notify parent and handle user input
+  const handleHeaderFieldChange = (field, value) => {
+    setIsUserEditing(true);
+    
+    // Update local state
+    switch (field) {
+      case 'unit':
+        setUnitNumber(value);
+        break;
+      case 'lesson':
+        setLessonNumber(value);
+        break;
+      case 'title':
+        setLessonTitle(value);
+        break;
+    }
+    
+    // Create updated header object
+    const updatedHeader = {
+      unit: field === 'unit' ? value : unitNumber,
+      lesson: field === 'lesson' ? value : lessonNumber,
+      title: field === 'title' ? value : lessonTitle
+    };
+    
+    // Notify parent immediately
+    if (onHeaderChange) {
+      onHeaderChange(updatedHeader);
+    }
+    
+    // Clear editing flag after a brief delay
+    setTimeout(() => setIsUserEditing(false), 100);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    try {
+      // Construct filename from header fields (matching App.js format)
+      const fileName = `U${unitNumber}L${lessonNumber}${lessonTitle.replace(/\s+/g, '')}`;
+      
+      // Call the parent save handler with just the filename
+      await onSave(fileName);
+      
+      // Show saved state briefly
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Save failed:', error);
+      setIsSaving(false);
+    }
+  };
 
   const textPresets = [
     {
@@ -346,6 +431,76 @@ const AssetManager = forwardRef(({ onDragStart, onPlaceTable, usedProblems }, re
         return <div className="graph-content">Graph content here</div>;
       case 'Tables':
         return <TableTab onPlaceTable={onPlaceTable} />;
+      case 'File':
+        return (
+          <div className="file-content">
+            {/* Login Section */}
+            <div className="file-section">
+              {isLoggedIn ? (
+                <div className="user-info">
+                  <div>✓ {userName}</div>
+                  <button onClick={onLogout} className="logout-button">
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button onClick={onLogin} className="login-button">
+                  Sign in with Google
+                </button>
+              )}
+            </div>
+
+            {/* Header Section */}
+            <div className="file-section">
+              <h4>Document Info</h4>
+              <div className="input-group">
+                <label>Unit:</label>
+                <input
+                  type="number"
+                  value={unitNumber}
+                  onChange={(e) => handleHeaderFieldChange('unit', e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="input-group">
+                <label>Lesson:</label>
+                <input
+                  type="number"
+                  value={lessonNumber}
+                  onChange={(e) => handleHeaderFieldChange('lesson', e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="input-group">
+                <label>Title:</label>
+                <input
+                  type="text"
+                  value={lessonTitle}
+                  onChange={(e) => handleHeaderFieldChange('title', e.target.value)}
+                  placeholder="Lesson Title"
+                />
+              </div>
+            </div>
+
+            {/* Save/Load Section */}
+            <div className="file-section">
+              <h4>File Operations</h4>
+              <button 
+                onClick={handleSave}
+                className={`save-button ${isSaving ? 'saved' : ''}`}
+                disabled={isSaving || !isLoggedIn}
+              >
+                {isSaving ? 'Saved!' : 'Save Worksheet'}
+              </button>
+              <button 
+                onClick={onLoad}
+                disabled={!isLoggedIn}
+              >
+                Load Worksheet
+              </button>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -393,8 +548,20 @@ const AssetManager = forwardRef(({ onDragStart, onPlaceTable, usedProblems }, re
 
   return (
     <div className="asset-manager">
+      {/* Snap to Grid Toggle - Always Visible */}
+      <div className="snap-toggle-section">
+        <label className="snap-toggle">
+          <input
+            type="checkbox"
+            checked={snapToGrid}
+            onChange={onToggleSnap}
+          />
+          STG (Snap to Grid)
+        </label>
+      </div>
+      
       <div className="asset-tabs">
-        {['Text', 'Images', 'Graphs', 'Tables', 'Problems'].map(tab => (
+        {['Text', 'Images', 'Graphs', 'Tables', 'Problems', 'File'].map(tab => (
           <button
             key={tab}
             className={`asset-tab ${activeTab === tab ? 'active' : ''}`}

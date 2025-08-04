@@ -6,6 +6,7 @@ import 'katex/dist/katex.min.css';
 import { BlockMath } from 'react-katex';
 import './WorksheetCanvas.css';
 import Header from './Header';
+import Footer from './Footer';
 import PropTypes from 'prop-types';
 
 export default class WorksheetCanvas extends Component {
@@ -172,7 +173,21 @@ export default class WorksheetCanvas extends Component {
   handleAddTable = (tableConfig) => {
     const tableCount = this.state.elements.filter(el => el.type === 'table').length;
     let tableX = 24; // left margin
-    let tableY = 60 + 100 * tableCount; // stack tables vertically, not all elements
+    
+    // Calculate position based on current scroll position
+    const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+    const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
+    const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
+    
+    // Position table near current view, but ensure it's within worksheet bounds
+    // Add some offset so it appears in a visible area near the middle of current view
+    const viewportHeight = window.innerHeight;
+    let tableY = relativeScrollY + (viewportHeight * 0.3); // 30% down from top of current view
+    
+    // Ensure the table stays within worksheet bounds (with some margin)
+    const maxY = 2112 - 200; // Two-page height minus table height margin
+    tableY = Math.min(Math.max(60, tableY), maxY); // Minimum 60px from top, maximum maxY
+    
     const tableWidth = 816 - 48; // worksheet width minus 2*24px margins
     
     // Check for table alignment opportunities (only when snap-to-grid is off)
@@ -541,20 +556,32 @@ export default class WorksheetCanvas extends Component {
     if (!this.props.snapToGrid) return null;
 
     const width = 816;
-    const height = 1056;
+    const height = 2112; // Two pages
     const margin = 24;
+    const pageHeight = 1056;
     const lines = [];
 
+    // Vertical lines for both pages
     for (let x = margin; x <= width - margin; x += this.gridSize) {
       lines.push(
         <line key={`v-${x}`} x1={x} y1={margin} x2={x} y2={height - margin} stroke="#ddd" strokeWidth="1" />
       );
     }
-    for (let y = margin; y <= height - margin; y += this.gridSize) {
+    
+    // Horizontal lines for page 1
+    for (let y = margin; y <= pageHeight - margin; y += this.gridSize) {
       lines.push(
-        <line key={`h-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="#ddd" strokeWidth="1" />
+        <line key={`h1-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="#ddd" strokeWidth="1" />
       );
     }
+    
+    // Horizontal lines for page 2
+    for (let y = pageHeight + margin; y <= height - margin; y += this.gridSize) {
+      lines.push(
+        <line key={`h2-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="#ddd" strokeWidth="1" />
+      );
+    }
+    
     return <svg className="grid-lines" width={width} height={height}>{lines}</svg>;
   };
 
@@ -637,6 +664,11 @@ export default class WorksheetCanvas extends Component {
       }, () => {
         // Auto-number problems after loading data
         setTimeout(() => this.autoNumberProblems(), 0);
+        
+        // Notify parent of loaded header data
+        if (this.props.onHeaderChange) {
+          this.props.onHeaderChange(headerToLoad);
+        }
       });
       
       // Sync used problems with parent App component
@@ -701,6 +733,14 @@ export default class WorksheetCanvas extends Component {
           unit={header.unit}
           lesson={header.lesson}
           title={header.title}
+        />
+        <Footer 
+          title={header.title}
+        />
+        <div className="page-break"></div>
+        <Footer 
+          title={header.title}
+          isPage2={true}
         />
         {this.renderGrid()}
         {this.state.elements.map((el) => {

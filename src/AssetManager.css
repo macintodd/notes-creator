@@ -3,9 +3,13 @@
 .asset-manager {
   position: fixed;
   top: 100px;
-  right: 30px;
+  left: 952px; /* 116px (app padding) + 816px (canvas width) + 20px (gap) = 952px */
   width: 250px;
-  height: 500px;
+  height: 750px; /* Increased from 500px to 750px (1.5x taller) */
+  min-width: 200px; /* Minimum width */
+  min-height: 300px; /* Minimum height */
+  max-width: 500px; /* Maximum width to prevent UI issues */
+  max-height: 90vh; /* Maximum height relative to viewport */
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 12px;
@@ -14,6 +18,7 @@
   flex-direction: column;
   z-index: 1000;
   overflow: hidden;
+  resize: both; /* Enable both horizontal and vertical resizing */
 }
 
 /* Updated tab layout to wrap into two rows */
@@ -28,10 +33,11 @@
 }
 
 .asset-tab {
-  flex: 0 0 calc(50% - 6px); /* Two tabs per row */
-  padding: 8px;
+  flex: 1 1 calc(33.33% - 6px); /* Flexible tabs that adapt to container width */
+  min-width: 60px; /* Minimum tab width */
+  padding: 6px 4px;
   text-align: center;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.3s, color 0.3s;
@@ -39,8 +45,8 @@
   border: none;
 }
 
-.asset-tab:nth-child(odd) {
-  margin-left: 6px; /* Slight offset for odd (first in row) */
+.asset-tab:nth-child(3n+1) {
+  margin-left: 0; /* Remove fixed margin for better flexibility */
 }
 
 .asset-tab.active {
@@ -247,4 +253,195 @@
   color: #4a90e2 !important;
   white-space: nowrap !important;
   pointer-events: none !important;
+}
+
+/* Snap to Grid Toggle Section */
+.snap-toggle-section {
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: center;
+}
+
+.snap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.snap-toggle input[type="checkbox"] {
+  margin: 0;
+}
+
+/* File Tab Content */
+.file-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.file-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-section h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-group label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+}
+
+.input-group input {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.login-button {
+  padding: 10px 16px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.login-button:hover {
+  background-color: #357ae8;
+}
+
+.user-info {
+  padding: 8px 12px;
+  background-color: #e8f5e8;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #2e7d32;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-button {
+  padding: 4px 8px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.logout-button:hover {
+  background-color: #d32f2f;
+}
+
+.save-button {
+  padding: 10px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.save-button:hover {
+  background-color: #357abd;
+}
+
+.save-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.save-button.saved {
+  background-color: #4caf50;
+}
+
+.file-section button:not(.save-button) {
+  padding: 8px 16px;
+  background-color: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.file-section button:not(.save-button):hover {
+  background-color: #555;
+}
+
+.file-section button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Resize Handle */
+.asset-manager::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #ccc 30%, #ccc 35%, transparent 35%, transparent 65%, #ccc 65%, #ccc 70%, transparent 70%);
+  cursor: nw-resize;
+  border-bottom-right-radius: 12px;
+}
+
+/* Ensure resize handle is visible on hover */
+.asset-manager:hover::after {
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #999 30%, #999 35%, transparent 35%, transparent 65%, #999 65%, #999 70%, transparent 70%);
+}
+
+/* Responsive tab layout based on container width */
+@container (min-width: 300px) {
+  .asset-tab {
+    font-size: 13px;
+    padding: 8px 6px;
+  }
+}
+
+@container (min-width: 400px) {
+  .asset-tab {
+    font-size: 14px;
+    padding: 10px 8px;
+  }
+}
+
+/* Alternative responsive approach using media queries if container queries aren't supported */
+@media (min-width: 1200px) {
+  .asset-manager[style*="width"] .asset-tab {
+    font-size: 13px;
+    padding: 8px 6px;
+  }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './DocManager.css';
 
-export default function DocManager({ onHeaderChange, ...props }) {
+export default function DocManager({ onHeaderChange, currentHeader, ...props }) {
   const [activeTab, setActiveTab] = useState('header');
   const [unitNumber, setUnitNumber] = useState('0');
   const [lessonNumber, setLessonNumber] = useState('0');
@@ -9,6 +9,15 @@ export default function DocManager({ onHeaderChange, ...props }) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedTitle, setLastSavedTitle] = useState(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+
+  // Update local state when currentHeader prop changes (when document is loaded)
+  useEffect(() => {
+    if (currentHeader) {
+      setUnitNumber(currentHeader.unit || '0');
+      setLessonNumber(currentHeader.lesson || '0');
+      setLessonTitle(currentHeader.title || 'Lesson Title');
+    }
+  }, [currentHeader]);
 
   const tabs = [
     { id: 'auth', label: props.isLoggedIn ? `Logged in` : 'Login' },
