@@ -29,7 +29,9 @@ export default class WorksheetCanvas extends Component {
         unit: '0',
         lesson: '0',
         title: 'Lesson Title'
-      }
+      },
+      graphDragState: null,
+      graphResizeState: null
     };
     this.gridSize = 24;
     this.contentRef = React.createRef();
@@ -217,6 +219,40 @@ export default class WorksheetCanvas extends Component {
     });
   };
 
+  handleAddGraph = (graphData) => {
+    // Calculate position based on current scroll position
+    const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+    const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
+    const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
+    
+    // Position graph near current view, but ensure it's within worksheet bounds
+    const viewportHeight = window.innerHeight;
+    let graphY = relativeScrollY + (viewportHeight * 0.3); // 30% down from top of current view
+    
+    // Ensure the graph stays within worksheet bounds (with some margin)
+    const maxY = 2112 - graphData.height - 50; // Two-page height minus graph height and margin
+    graphY = Math.min(Math.max(60, graphY), maxY); // Minimum 60px from top, maximum maxY
+    
+    let graphX = 24; // left margin by default
+    
+    const newGraph = {
+      id: this.state.nextId,
+      type: 'graph',
+      x: graphX,
+      y: graphY,
+      width: graphData.width,
+      height: graphData.height,
+      imageData: graphData.imageData,
+      config: graphData.config,
+      isSelected: false,
+    };
+
+    this.setState((prevState) => ({
+      elements: [...prevState.elements, newGraph],
+      nextId: prevState.nextId + 1,
+    }));
+  };
+
   handleUpdateElement = (id, updates) => {
     console.log('🔄 Handle update element:', id, updates);
     this.setState((prevState) => ({
@@ -342,6 +378,168 @@ export default class WorksheetCanvas extends Component {
       console.log('Focusing canvas for keyboard events');
       this.contentRef.current.focus();
     }
+  };
+
+  // Graph drag and resize functionality
+  handleGraphMouseDown = (e, element) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isResizeHandle = e.target.dataset.handle;
+    if (isResizeHandle) {
+      // Start resize operation
+      this.setState({
+        graphResizeState: {
+          id: element.id,
+          startX: e.clientX,
+          startY: e.clientY,
+          startWidth: element.width,
+          startHeight: element.height,
+          startLeft: element.x,
+          startTop: element.y,
+          handle: isResizeHandle
+        }
+      });
+    } else {
+      // Start drag operation
+      this.handleSelectElement(element.id);
+      this.setState({
+        graphDragState: {
+          id: element.id,
+          startX: e.clientX,
+          startY: e.clientY,
+          startLeft: element.x,
+          startTop: element.y
+        }
+      });
+    }
+  };
+
+  handleGraphGlobalMouseMove = (e) => {
+    const { graphDragState, graphResizeState } = this.state;
+    const { snapToGrid = false } = this.props;
+    const gridSize = this.gridSize;
+
+    if (graphDragState) {
+      e.preventDefault();
+      const dx = e.clientX - graphDragState.startX;
+      const dy = e.clientY - graphDragState.startY;
+      let newX = graphDragState.startLeft + dx;
+      let newY = graphDragState.startTop + dy;
+      
+      // Apply snap-to-grid if enabled
+      if (snapToGrid) {
+        newX = Math.round(newX / gridSize) * gridSize;
+        newY = Math.round(newY / gridSize) * gridSize;
+      }
+      
+      this.handleUpdateElement(graphDragState.id, { x: newX, y: newY });
+    }
+
+    if (graphResizeState) {
+      e.preventDefault();
+      const dx = e.clientX - graphResizeState.startX;
+      const dy = e.clientY - graphResizeState.startY;
+      let newWidth = graphResizeState.startWidth;
+      let newHeight = graphResizeState.startHeight;
+      let newX = graphResizeState.startLeft;
+      let newY = graphResizeState.startTop;
+
+      // Handle different resize directions
+      if (graphResizeState.handle.includes('right')) {
+        newWidth = Math.max(100, graphResizeState.startWidth + dx);
+      }
+      if (graphResizeState.handle.includes('left')) {
+        const deltaWidth = graphResizeState.startWidth - dx;
+        if (deltaWidth >= 100) {
+          newWidth = deltaWidth;
+          newX = graphResizeState.startLeft + dx;
+        }
+      }
+      if (graphResizeState.handle.includes('bottom')) {
+        newHeight = Math.max(100, graphResizeState.startHeight + dy);
+      }
+      if (graphResizeState.handle.includes('top')) {
+        const deltaHeight = graphResizeState.startHeight - dy;
+        if (deltaHeight >= 100) {
+          newHeight = deltaHeight;
+          newY = graphResizeState.startTop + dy;
+        }
+      }
+
+      // Apply snap-to-grid to position if enabled
+      if (snapToGrid) {
+        newX = Math.round(newX / gridSize) * gridSize;
+        newY = Math.round(newY / gridSize) * gridSize;
+      }
+
+      this.handleUpdateElement(graphResizeState.id, {
+        width: newWidth,
+        height: newHeight,
+        x: newX,
+        y: newY
+      });
+    }
+  };
+
+  handleGraphGlobalMouseUp = () => {
+    const hadGraphDragState = this.state.graphDragState !== null;
+    const hadGraphResizeState = this.state.graphResizeState !== null;
+    
+    this.setState({
+      graphDragState: null,
+      graphResizeState: null,
+      justFinishedGraphInteraction: hadGraphDragState || hadGraphResizeState
+    });
+    
+    // Clear the flag after a brief delay to allow the click event to process
+    if (hadGraphDragState || hadGraphResizeState) {
+      setTimeout(() => {
+        this.setState({ justFinishedGraphInteraction: false });
+      }, 50);
+    }
+  };
+
+  renderGraphHandles = (element) => {
+    if (!element.isSelected) return null;
+    
+    const handles = [
+      'top-left', 'top-right', 'bottom-left', 'bottom-right',
+      'top', 'bottom', 'left', 'right',
+    ];
+    
+    const positions = {
+      'top-left': { left: -4, top: -4 },
+      'top-right': { right: -4, top: -4 },
+      'bottom-left': { left: -4, bottom: -4 },
+      'bottom-right': { right: -4, bottom: -4 },
+      'top': { left: '50%', top: -4, transform: 'translateX(-50%)' },
+      'bottom': { left: '50%', bottom: -4, transform: 'translateX(-50%)' },
+      'left': { top: '50%', left: -4, transform: 'translateY(-50%)' },
+      'right': { top: '50%', right: -4, transform: 'translateY(-50%)' },
+    };
+    
+    return handles.map((handle) => (
+      <div
+        key={handle}
+        data-handle={handle}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          this.handleGraphMouseDown(e, element);
+        }}
+        style={{
+          position: 'absolute',
+          width: 8,
+          height: 8,
+          backgroundColor: '#007bff',
+          border: '1px solid white',
+          borderRadius: '50%',
+          cursor: `${handle}-resize`,
+          zIndex: 110,
+          ...positions[handle],
+        }}
+      />
+    ));
   };
 
   handleDeselectAll = () => {
@@ -686,6 +884,10 @@ export default class WorksheetCanvas extends Component {
     // Add keyboard event listener
     document.addEventListener('keydown', this.handleKeyDown);
     
+    // Add global mouse event listeners for graph dragging/resizing
+    document.addEventListener('mousemove', this.handleGraphGlobalMouseMove);
+    document.addEventListener('mouseup', this.handleGraphGlobalMouseUp);
+    
     // Set up ref methods
     if (this.props.ref) {
       this.props.ref.current = {
@@ -699,6 +901,10 @@ export default class WorksheetCanvas extends Component {
 
   componentWillUnmount() {
     document.removeEventListener('keydown', this.handleKeyDown);
+    
+    // Remove global mouse event listeners for graph dragging/resizing
+    document.removeEventListener('mousemove', this.handleGraphGlobalMouseMove);
+    document.removeEventListener('mouseup', this.handleGraphGlobalMouseUp);
   }
 
   handleHeaderChange = (headerData) => {
@@ -720,7 +926,8 @@ export default class WorksheetCanvas extends Component {
         onDrop={this.handleDrop}
         onDragOver={this.handleDragOver}
         onClick={(e) => {
-          if (!e.target.classList.contains('table-drag-handle')) {
+          if (!e.target.classList.contains('table-drag-handle') && 
+              !this.state.justFinishedGraphInteraction) {
             this.handleDeselectAll();
           }
         }}
@@ -790,6 +997,43 @@ export default class WorksheetCanvas extends Component {
                 snapToGrid={this.props.snapToGrid}
                 checkAlignment={this.checkTableAlignmentOnDrag}
               />
+            );
+          }
+
+          if (el.type === 'graph') {
+            return (
+              <div
+                key={el.id}
+                className="worksheet-graph"
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  border: el.isSelected ? '2px solid #007bff' : '1px solid #ddd',
+                  borderRadius: 4,
+                  cursor: 'move',
+                  background: 'white',
+                  overflow: 'hidden',
+                  zIndex: 10 // Render graphs above tables
+                }}
+                onClick={() => this.handleSelectElement(el.id)}
+                onMouseDown={(e) => this.handleGraphMouseDown(e, el)}
+              >
+                <img
+                  src={el.imageData}
+                  alt="Graph"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    pointerEvents: 'none'
+                  }}
+                  draggable={false}
+                />
+                {el.isSelected && this.renderGraphHandles(el)}
+              </div>
             );
           }
 

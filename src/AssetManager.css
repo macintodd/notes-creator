@@ -313,7 +313,8 @@
   color: #555;
 }
 
-.input-group input {
+.input-group input,
+.input-group select {
   padding: 6px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;

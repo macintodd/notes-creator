@@ -754,6 +754,8 @@ function AppContent() {
         .pdf-export-clone .table-cell {
           box-shadow: none !important;
           outline: none !important;
+          background: white !important;
+          background-color: white !important;
         }
         
         /* Remove borders from text boxes and UI elements, but preserve table structure */
@@ -964,6 +966,11 @@ function AppContent() {
         onPlaceTable={(config) => {
           if (worksheetRef.current) {
             worksheetRef.current.handleAddTable(config);
+          }
+        }}
+        onPlaceGraph={(graphData) => {
+          if (worksheetRef.current) {
+            worksheetRef.current.handleAddGraph(graphData);
           }
         }}
         usedProblems={usedProblems}

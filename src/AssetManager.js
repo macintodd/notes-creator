@@ -2,6 +2,7 @@
 import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { BlockMath, InlineMath } from 'react-katex';
 import TableTab from './TableTab';
+import GraphTab from './GraphTab';
 // import html2canvas from 'html2canvas';
 // import jsPDF from 'jspdf';
 import 'katex/dist/katex.min.css';
@@ -9,7 +10,8 @@ import './AssetManager.css';
 
 const AssetManager = forwardRef(({ 
   onDragStart, 
-  onPlaceTable, 
+  onPlaceTable,
+  onPlaceGraph,
   usedProblems,
   // DocManager props
   isLoggedIn,
@@ -34,7 +36,7 @@ const AssetManager = forwardRef(({
   const [jsonText, setJsonText] = useState(''); // Current JSON being edited
   
   // DocManager state
-  const [unitNumber, setUnitNumber] = useState('0');
+  const [unitNumber, setUnitNumber] = useState('1A');
   const [lessonNumber, setLessonNumber] = useState('0');
   const [lessonTitle, setLessonTitle] = useState('Lesson Title');
   const [isSaving, setIsSaving] = useState(false);
@@ -67,7 +69,7 @@ const AssetManager = forwardRef(({
   // Only update if user is not currently editing to avoid overriding user input
   useEffect(() => {
     if (currentHeader && !isUserEditing) {
-      setUnitNumber(currentHeader.unit || '0');
+      setUnitNumber(currentHeader.unit || '1A');
       setLessonNumber(currentHeader.lesson || '0');
       setLessonTitle(currentHeader.title || 'Lesson Title');
     }
@@ -458,7 +460,7 @@ const AssetManager = forwardRef(({
       case 'Images':
         return <div className="image-content">Image content here</div>;
       case 'Graphs':
-        return <div className="graph-content">Graph content here</div>;
+        return <GraphTab onPlaceGraph={onPlaceGraph} />;
       case 'Tables':
         return <TableTab onPlaceTable={onPlaceTable} />;
       case 'File':
@@ -485,12 +487,21 @@ const AssetManager = forwardRef(({
               <h4>Document Info</h4>
               <div className="input-group">
                 <label>Unit:</label>
-                <input
-                  type="number"
+                <select
                   value={unitNumber}
                   onChange={(e) => handleHeaderFieldChange('unit', e.target.value)}
-                  min="0"
-                />
+                >
+                  <option value="1A">1A</option>
+                  <option value="1B">1B</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4A">4A</option>
+                  <option value="4B">4B</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                </select>
               </div>
               <div className="input-group">
                 <label>Lesson:</label>
