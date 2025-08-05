@@ -14,6 +14,7 @@ export default function TableBlock({
   isSelected,
   onSelect,
   onUpdate,
+  onMultiUpdate,
   onDeselect,
   snapToGrid = true,
   cellValues: initialCellValues = [],
@@ -38,6 +39,11 @@ export default function TableBlock({
       setCellValues(initialCellValues);
     }
   }, [initialCellValues, columns]);
+
+  // Sync currentRowHeight with rowHeight prop changes (for multi-table updates)
+  useEffect(() => {
+    setCurrentRowHeight(rowHeight);
+  }, [rowHeight]);
 
   // Handle cell edit
   const handleCellClick = (colIdx) => {
@@ -168,6 +174,12 @@ export default function TableBlock({
   const originalHeightRef = useRef(0);
 
   const handleMouseDown = (e) => {
+    // Don't start dragging if Shift is pressed (we're doing multi-select)
+    if (e.shiftKey) {
+      console.log('🚫 Skipping drag start because Shift is pressed (multi-select mode)');
+      return;
+    }
+    
     if (e.target.classList.contains('table-drag-handle')) {
       draggingRef.current = true;
       startYRef.current = e.clientY;
@@ -213,7 +225,10 @@ export default function TableBlock({
     }
     
     setCurrentRowHeight(newHeight);
-    if (onUpdate) {
+    // Use onMultiUpdate for height changes to synchronize selected tables
+    if (onMultiUpdate) {
+      onMultiUpdate(id, { rowHeight: newHeight });
+    } else if (onUpdate) {
       onUpdate(id, { rowHeight: newHeight });
     }
   };
@@ -231,7 +246,7 @@ export default function TableBlock({
       }
     }
     
-    onSelect(id);
+    onSelect(id, null); // null event = single select on drag end
     document.removeEventListener('mousemove', handleDragging);
     document.removeEventListener('mouseup', handleDragEnd);
   };
@@ -369,7 +384,23 @@ export default function TableBlock({
         }}
         onMouseDown={handleMouseDown}
         tabIndex={0}
-        onClick={() => onSelect(id)}
+        onMouseUp={(e) => {
+          console.log('🔥 TableBlock CONTAINER onMouseUp:', { id, shiftKey: e.shiftKey, button: e.button });
+          if (e.button === 0 && e.shiftKey) { // Left click with Shift
+            console.log('🚀 Direct Shift+mouseup calling onSelect');
+            onSelect(id, e);
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onClick={(e) => {
+          console.log('🔍 TableBlock CONTAINER onClick called:', { id, shiftKey: e.shiftKey, target: e.target.className, targetTag: e.target.tagName });
+          if (!e.shiftKey) { // Only handle onClick if it's not a Shift+click (already handled by mouseUp)
+            onSelect(id, e);
+          } else {
+            console.log('🚫 Skipping onClick because Shift+click already handled by mouseUp');
+          }
+        }}
       >
         <div className="table-drag-handle" style={{
           width: 24,
@@ -413,11 +444,10 @@ export default function TableBlock({
               className="table-cell"
               style={{
                 minHeight: currentRowHeight,
-                borderRight: colIdx < columns - 1 && !hiddenBorders.has(colIdx) ? '2px solid #000' : 'none',
+                borderRight: colIdx < columns - 1 && !hiddenBorders.has(colIdx) ? '2px solid #000' : (colIdx === columns - 1 ? '2px solid #000' : 'none'),
                 borderBottom: '2px solid #000',
                 borderLeft: colIdx === 0 ? '2px solid #000' : 'none',
                 borderTop: '2px solid #000',
-                borderRight: '2px solid #000',
                 padding: 8,
                 background: '#fafcff',
                 position: 'relative',
@@ -425,11 +455,18 @@ export default function TableBlock({
                 transition: 'background-color 0.2s'
               }}
               onClick={(e) => {
+                // Handle table selection with Shift+click for multi-select
+                if (e.shiftKey) {
+                  console.log('🔍 Cell clicked with Shift - propagating to table selection');
+                  onSelect(id, e);
+                  return; // Don't start editing when shift-clicking for selection
+                }
+                
                 // Only handle cell click if we're not already editing this cell
                 if (editingCell !== colIdx) {
                   handleCellClick(colIdx);
                 }
-                // Always stop propagation to prevent canvas deselection
+                // Stop propagation to prevent canvas deselection (but allow table selection above)
                 e.stopPropagation();
               }}
               onDrop={(e) => handleCellDrop(colIdx, e)}
@@ -449,8 +486,21 @@ export default function TableBlock({
                     handleTextareaResize(e);
                   }}
                   onBlur={(e) => handleCellBlur(colIdx, e)}
-                  onClick={(e) => e.stopPropagation()} // Prevent click from bubbling up to canvas
-                  onMouseDown={(e) => e.stopPropagation()} // Also prevent mousedown from bubbling up
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      console.log('🔍 Textarea clicked with Shift - propagating to table selection');
+                      onSelect(id, e);
+                      return;
+                    }
+                    e.stopPropagation(); // Prevent click from bubbling up to canvas
+                  }}
+                  onMouseDown={(e) => {
+                    if (e.shiftKey) {
+                      onSelect(id, e);
+                      return;
+                    }
+                    e.stopPropagation(); // Also prevent mousedown from bubbling up
+                  }}
                   style={{
                     width: '100%',
                     fontSize: '10pt', // Changed from '1em' to '10pt'

@@ -20,6 +20,7 @@ const AssetManager = forwardRef(({
   onLogout,
   onSave,
   onLoad,
+  driveService,
   snapToGrid,
   onToggleSnap,
   currentHeader,
@@ -336,6 +337,158 @@ const AssetManager = forwardRef(({
     }));
   };
 
+  const handleLoadProblemSets = async () => {
+    if (!driveService || !isLoggedIn) {
+      alert('Please sign in with Google to load problem sets');
+      return;
+    }
+
+    try {
+      // Use Google Drive picker to let user select a file
+      const selectedFile = await driveService.openGoogleFilePicker();
+      if (!selectedFile) {
+        return; // User cancelled
+      }
+
+      // Download the selected file content
+      const contentResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${selectedFile.id}?alt=media`,
+        {
+          headers: {
+            'Authorization': `Bearer ${driveService.accessToken}`
+          }
+        }
+      );
+
+      if (!contentResponse.ok) {
+        throw new Error('Failed to download file');
+      }
+
+      const fileContent = await contentResponse.text();
+      console.log('Raw file content length:', fileContent.length);
+      
+      // Try to process like paste functionality - handle the content as raw JSON text
+      try {
+        // First, try to parse as JSON to see what format we have
+        let parsedData = JSON.parse(fileContent);
+        console.log('First parse successful');
+        console.log('First parsed data type:', typeof parsedData);
+        
+        // Check if we have double-encoded JSON (string containing JSON)
+        if (typeof parsedData === 'string') {
+          console.log('Detected double-encoded JSON, parsing again...');
+          try {
+            parsedData = JSON.parse(parsedData);
+            console.log('Second parse successful');
+            console.log('Second parsed data type:', typeof parsedData);
+          } catch (secondParseError) {
+            console.log('Second parse failed, using first result');
+          }
+        }
+        
+        console.log('Final parsed data type:', typeof parsedData);
+        console.log('Is parsedData an object?', typeof parsedData === 'object' && parsedData !== null);
+        
+        // Make sure we have an object, not a string
+        if (typeof parsedData !== 'object' || parsedData === null) {
+          alert('File does not contain valid JSON object');
+          return;
+        }
+        
+        let finalJson;
+        
+        // Check if this is the new format with metadata (version 1.0+)
+        if (parsedData.version && parsedData.metadata && parsedData.problems) {
+          console.log('Detected new format with version:', parsedData.version);
+          console.log('Problems array length:', parsedData.problems.length);
+          console.log('Is problems an array?', Array.isArray(parsedData.problems));
+          
+          // Convert new format to old format expected by AssetManager
+          const setName = parsedData.metadata.title || selectedFile.name.replace(/\.(json|txt)$/, '') || 'LoadedSet';
+          console.log('Set name will be:', setName);
+          
+          finalJson = {
+            [setName]: parsedData.problems
+          };
+          console.log('Final JSON created with keys:', Object.keys(finalJson));
+        } else {
+          // Already in the expected format or other format - use as is
+          finalJson = parsedData;
+          console.log('Using data as-is with keys:', Object.keys(finalJson));
+        }
+        
+        // Validate the final structure
+        console.log('Validating final JSON...');
+        const finalKeys = Object.keys(finalJson);
+        console.log('Final JSON keys:', finalKeys);
+        
+        let validSets = 0;
+        for (const setName of finalKeys) {
+          const problems = finalJson[setName];
+          console.log(`Checking set "${setName}":`, Array.isArray(problems) ? `Array with ${problems.length} items` : typeof problems);
+          if (Array.isArray(problems)) {
+            validSets++;
+            console.log(`Set "${setName}" is valid with ${problems.length} problems`);
+          } else {
+            console.log(`Set "${setName}" is INVALID - not an array, type:`, typeof problems);
+          }
+        }
+        
+        if (validSets === 0) {
+          console.error('No valid problem sets found');
+          alert('No valid problem sets found in the file');
+          return;
+        }
+        
+        // Now process like the paste functionality
+        const newSets = new Map();
+        const newJsonSets = new Map();
+        
+        for (const setName of finalKeys) {
+          const problems = finalJson[setName];
+          if (Array.isArray(problems)) {
+            newSets.set(setName, problems);
+            newJsonSets.set(setName, JSON.stringify({[setName]: problems}, null, 2));
+            console.log(`Added set "${setName}" with ${problems.length} problems`);
+          }
+        }
+        
+        // Update state like paste does
+        setProblemSets(prev => {
+          const updated = new Map(prev);
+          newSets.forEach((problems, setName) => {
+            updated.set(setName, problems);
+          });
+          return updated;
+        });
+        
+        setProblemSetsJson(prev => {
+          const updated = new Map(prev);
+          newJsonSets.forEach((json, setName) => {
+            updated.set(setName, json);
+          });
+          return updated;
+        });
+        
+        // Set the first loaded set as current
+        const firstSetName = Array.from(newSets.keys())[0];
+        setCurrentSet(firstSetName);
+        setJsonText(newJsonSets.get(firstSetName));
+        setSelectedProblems(new Set());
+        
+        console.log(`Successfully loaded ${newSets.size} problem set(s)`);
+        
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError);
+        alert('Selected file does not contain valid JSON');
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading problem sets:', error);
+      alert(`Failed to load problem sets: ${error.message}`);
+    }
+  };
+
   const RenderEquation = ({ equation }) => {
     // Handle pure LaTeX (starts and ends with $$)
     if (equation.startsWith('$$') && equation.endsWith('$$')) {
@@ -454,6 +607,17 @@ const AssetManager = forwardRef(({
                   })}
                 </div>
               </>
+            )}
+            {isLoggedIn && (
+              <div className="load-problems-section">
+                <button 
+                  className="load-problems-button"
+                  onClick={handleLoadProblemSets}
+                  title="Load problem sets from Google Drive"
+                >
+                  Load Problems
+                </button>
+              </div>
             )}
           </div>
         );

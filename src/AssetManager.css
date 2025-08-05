@@ -471,3 +471,34 @@
     padding: 8px 6px;
   }
 }
+
+/* Load Problems Section */
+.load-problems-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.load-problems-button {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  max-width: 200px;
+}
+
+.load-problems-button:hover {
+  background-color: #357abd;
+}
+
+.load-problems-button:active {
+  background-color: #2e6ba8;
+  transform: translateY(1px);
+}

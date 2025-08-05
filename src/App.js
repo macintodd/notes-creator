@@ -982,6 +982,7 @@ function AppContent() {
         onLogout={handleLogout}
         onSave={handleSave}
         onLoad={handleLoad}
+        driveService={driveService || driveServiceRef.current}
         snapToGrid={snapToGrid}
         onToggleSnap={() => setSnapToGrid(prev => !prev)}
         currentHeader={currentHeader}

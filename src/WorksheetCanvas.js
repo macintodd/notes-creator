@@ -31,10 +31,12 @@ export default class WorksheetCanvas extends Component {
         title: 'Lesson Title'
       },
       graphDragState: null,
-      graphResizeState: null
+      graphResizeState: null,
+      clipboardTable: null // Store copied table structure
     };
     this.gridSize = 24;
     this.contentRef = React.createRef();
+    this.lastPasteTime = 0; // Prevent duplicate paste operations
   }
 
   snapToGrid = (value) => {
@@ -285,6 +287,106 @@ export default class WorksheetCanvas extends Component {
     // Note: auto-numbering will be triggered by handleUpdateElement
   };
 
+  // Multi-table synchronized update function
+  handleMultiTableUpdate = (triggerTableId, updates) => {
+    console.log('📐 Multi-table update triggered by:', triggerTableId, updates);
+    
+    // Find all selected tables
+    const selectedTables = this.state.elements.filter(el => el.isSelected && el.type === 'table');
+    
+    if (selectedTables.length > 1) {
+      console.log('📐 Updating', selectedTables.length, 'selected tables');
+      
+      // Sort tables by Y position (top to bottom)
+      const sortedTables = [...selectedTables].sort((a, b) => a.y - b.y);
+      
+      // Store initial spacing relationships if this is a height change
+      if (updates.rowHeight !== undefined) {
+        // Calculate initial vertical gaps between consecutive tables
+        const initialGaps = [];
+        for (let i = 0; i < sortedTables.length - 1; i++) {
+          const currentTable = sortedTables[i];
+          const nextTable = sortedTables[i + 1];
+          const currentBottom = currentTable.y + (currentTable.rowHeight + 20); // +20 for table padding
+          const nextTop = nextTable.y;
+          const gap = nextTop - currentBottom;
+          initialGaps.push(gap);
+          console.log(`📐 Initial gap between table ${currentTable.id} and ${nextTable.id}:`, gap);
+        }
+        
+        // Apply updates with maintained spacing
+        this.setState((prevState) => ({
+          elements: prevState.elements.map((el) => {
+            if (el.isSelected && el.type === 'table') {
+              console.log('📐 Applying updates to table:', el.id, updates);
+              
+              // Find this table's position in the sorted array
+              const tableIndex = sortedTables.findIndex(t => t.id === el.id);
+              let newY = el.y;
+              
+              // If this is not the first table, calculate new Y position to maintain spacing
+              if (tableIndex > 0) {
+                // Start from the first table and work down, maintaining gaps
+                let cumulativeY = sortedTables[0].y;
+                
+                for (let i = 0; i < tableIndex; i++) {
+                  // Add the height of the current table + its bottom padding
+                  cumulativeY += (updates.rowHeight + 20);
+                  // Add the original gap to the next table
+                  if (i < initialGaps.length) {
+                    cumulativeY += initialGaps[i];
+                  }
+                }
+                
+                newY = cumulativeY;
+                console.log(`📐 Table ${el.id} new Y position to maintain spacing:`, newY);
+              }
+              
+              return {
+                ...el,
+                // Handle position updates with snap-to-grid and spacing maintenance
+                x: this.props.snapToGrid && updates.x !== undefined ? this.snapToGrid(updates.x) : (updates.x ?? el.x),
+                y: this.props.snapToGrid ? this.snapToGrid(newY) : newY,
+                // Handle rowHeight specifically for tables
+                rowHeight: updates.rowHeight !== undefined ? updates.rowHeight : el.rowHeight,
+                // Apply any other updates
+                ...Object.fromEntries(
+                  Object.entries(updates).filter(([key]) => !['x', 'y', 'rowHeight'].includes(key))
+                )
+              };
+            }
+            return el;
+          }),
+        }));
+      } else {
+        // For non-height updates, use the original logic
+        this.setState((prevState) => ({
+          elements: prevState.elements.map((el) => {
+            if (el.isSelected && el.type === 'table') {
+              console.log('📐 Applying updates to table:', el.id, updates);
+              return {
+                ...el,
+                // Handle position updates with snap-to-grid
+                x: this.props.snapToGrid && updates.x !== undefined ? this.snapToGrid(updates.x) : (updates.x ?? el.x),
+                y: updates.y !== undefined
+                  ? (this.props.snapToGrid ? this.snapToGrid(updates.y) : updates.y)
+                  : el.y,
+                // Apply any other updates
+                ...Object.fromEntries(
+                  Object.entries(updates).filter(([key]) => !['x', 'y'].includes(key))
+                )
+              };
+            }
+            return el;
+          }),
+        }));
+      }
+    } else {
+      // Fall back to single table update
+      this.handleUpdateElement(triggerTableId, updates);
+    }
+  };
+
   // Auto-numbering function for problems in table cells
   autoNumberProblems = () => {
     console.log('🔢 Auto-numbering problems started');
@@ -361,17 +463,81 @@ export default class WorksheetCanvas extends Component {
     }
   };
 
-  handleSelectElement = (id) => {
-    console.log('Selecting element with id:', id);
+  handleSelectElement = (id, event = null) => {
+    console.log('🔍 handleSelectElement called with:', { 
+      id: id, 
+      idType: typeof id,
+      event: event ? 'present' : 'null', 
+      shiftKey: event?.shiftKey, 
+      eventType: event?.type 
+    });
     
-    this.setState((prevState) => ({
-      elements: prevState.elements.map((el) => ({
-        ...el,
-        isSelected: el.id === id,
-      })),
-    }));
+    // Check if Shift key is pressed for multi-select
+    const isShiftSelect = event && event.shiftKey;
     
-    console.log('Elements after selection:', this.state.elements.map(el => ({ id: el.id, type: el.type, isSelected: el.id === id })));
+    this.setState((prevState) => {
+      console.log('🔍 BEFORE setState:');
+      console.log('  - All elements:', prevState.elements.map(el => ({ id: el.id, type: el.type, isSelected: el.isSelected })));
+      console.log('  - Looking for ID:', id, 'type:', typeof id);
+      console.log('  - Element IDs:', prevState.elements.map(el => el.id));
+      console.log('  - ID matches:', prevState.elements.map(el => ({ id: el.id, matches: el.id === id, strictEquals: el.id === id })));
+      
+      if (isShiftSelect) {
+        // Multi-select mode: add/remove tables from selection
+        const clickedElement = prevState.elements.find(el => el.id === id);
+        console.log('🔍 Clicked element found:', clickedElement ? { id: clickedElement.id, type: clickedElement.type, isSelected: clickedElement.isSelected } : 'NOT FOUND');
+        
+        // Only allow multi-select for tables
+        if (clickedElement && clickedElement.type === 'table') {
+          const currentlySelectedTables = prevState.elements.filter(el => el.type === 'table' && el.isSelected);
+          console.log('🔍 Currently selected tables BEFORE operation:', currentlySelectedTables.map(t => ({ id: t.id, isSelected: t.isSelected })));
+          
+          const newElements = prevState.elements.map((el) => {
+            if (el.id === id) {
+              // Toggle the clicked table's selection
+              const newSelected = !el.isSelected;
+              console.log(`🔍 ${newSelected ? 'ADDING' : 'REMOVING'} table ${id} ${newSelected ? 'to' : 'from'} selection (was: ${el.isSelected}, now: ${newSelected})`);
+              return { ...el, isSelected: newSelected };
+            } else if (el.type !== 'table' && el.isSelected) {
+              // Deselect non-table elements when doing table multi-select
+              console.log(`🔍 Deselecting non-table element ${el.id}`);
+              return { ...el, isSelected: false };
+            } else {
+              // Keep other table elements' selection state unchanged
+              return el;
+            }
+          });
+          
+          // Log what the new state will be
+          const newSelectedTables = newElements.filter(el => el.type === 'table' && el.isSelected);
+          console.log('🔍 NEW selected tables AFTER operation:', newSelectedTables.map(t => ({ id: t.id, isSelected: t.isSelected })));
+          
+          return { elements: newElements };
+        } else {
+          // If clicked element is not a table, fall back to single select
+          console.log('🔍 Clicked element is not a table (or not found), using single select');
+          return {
+            elements: prevState.elements.map((el) => ({
+              ...el,
+              isSelected: el.id === id,
+            }))
+          };
+        }
+      } else {
+        // Single select mode: select only the clicked element
+        console.log('🔍 Single select mode: selecting', id);
+        return {
+          elements: prevState.elements.map((el) => ({
+            ...el,
+            isSelected: el.id === id,
+          }))
+        };
+      }
+    }, () => {
+      // Log the final state after update
+      const finalSelectedTables = this.state.elements.filter(el => el.isSelected && el.type === 'table');
+      console.log('🔍 FINAL selection state after setState:', finalSelectedTables.map(el => ({ id: el.id, type: el.type })));
+    });
     
     // Focus the canvas so keyboard events work
     if (this.contentRef.current) {
@@ -402,7 +568,7 @@ export default class WorksheetCanvas extends Component {
       });
     } else {
       // Start drag operation
-      this.handleSelectElement(element.id);
+      this.handleSelectElement(element.id, null); // null event = single select on drag start
       this.setState({
         graphDragState: {
           id: element.id,
@@ -555,16 +721,121 @@ export default class WorksheetCanvas extends Component {
     console.log('KeyDown event received:', e.key);
     console.log('Current elements:', this.state.elements.map(el => ({ id: el.id, type: el.type, isSelected: el.isSelected })));
     
+    // Check if any text box is currently being edited
+    const activeElement = document.activeElement;
+    const isEditingText = activeElement && 
+      (activeElement.contentEditable === 'true' ||
+       activeElement.tagName === 'INPUT' ||
+       activeElement.tagName === 'TEXTAREA' ||
+       activeElement.closest('[contenteditable="true"]'));
+    
+    // Copy functionality (Cmd+C or Ctrl+C)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !isEditingText) {
+      console.log('Copy command detected');
+      e.preventDefault();
+      e.stopPropagation(); // Stop event propagation
+      
+      const selectedTables = this.state.elements.filter(el => el.isSelected && el.type === 'table');
+      
+      if (selectedTables.length === 1) {
+        const selectedTable = selectedTables[0];
+        // Store table structure without cell data
+        const tableCopy = {
+          type: 'table',
+          width: selectedTable.width,
+          columns: selectedTable.columns,
+          rowHeight: selectedTable.rowHeight,
+          // Don't copy cellValues - we want empty tables
+        };
+        
+        this.setState({ clipboardTable: tableCopy });
+        console.log('Table copied to clipboard:', tableCopy);
+        
+        return;
+      } else if (selectedTables.length > 1) {
+        console.log('Multiple tables selected - copy not supported');
+        return;
+      } else {
+        console.log('No table selected for copying');
+        return;
+      }
+    }
+    
+    // Paste functionality (Cmd+V or Ctrl+V)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'v' && !isEditingText) {
+      console.log('Paste command detected');
+      
+      if (this.state.clipboardTable) {
+        e.preventDefault();
+        e.stopPropagation(); // Stop event propagation to prevent duplicate handling
+        
+        // Prevent duplicate paste operations within 100ms
+        const currentTime = Date.now();
+        if (currentTime - this.lastPasteTime < 100) {
+          console.log('Duplicate paste prevented');
+          return;
+        }
+        this.lastPasteTime = currentTime;
+        
+        // Calculate position for pasted table
+        const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+        const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
+        const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
+        
+        // Position table near current view, offset from the original
+        const viewportHeight = window.innerHeight;
+        let pasteY = relativeScrollY + (viewportHeight * 0.3);
+        
+        // Add offset to avoid pasting directly on top of existing tables
+        const existingTables = this.state.elements.filter(el => el.type === 'table');
+        if (existingTables.length > 0) {
+          // Find the bottommost table and place new table below it
+          const maxY = Math.max(...existingTables.map(table => table.y + table.rowHeight));
+          pasteY = Math.max(pasteY, maxY + 50); // 50px spacing below the last table
+        }
+        
+        // Ensure the table stays within worksheet bounds
+        const maxY = 2112 - 200; // Two-page height minus table height margin
+        pasteY = Math.min(Math.max(60, pasteY), maxY);
+        
+        const pasteX = 24; // left margin
+        
+        // Check for table alignment opportunities (only when snap-to-grid is off)
+        const alignment = this.findTableAlignment(pasteY, pasteX, this.state.clipboardTable.width);
+        if (alignment) {
+          pasteY = alignment;
+          console.log('Pasted table aligned to Y:', pasteY);
+        }
+        
+        // Create new table from clipboard
+        const newTable = {
+          ...this.state.clipboardTable,
+          id: this.state.nextId,
+          x: pasteX,
+          y: pasteY,
+          isSelected: true, // Select the pasted table
+          cellValues: Array(this.state.clipboardTable.columns).fill('') // Empty cells
+        };
+        
+        // Deselect all other elements and add the new table
+        this.setState((prevState) => ({
+          elements: [
+            ...prevState.elements.map(el => ({ ...el, isSelected: false })),
+            newTable
+          ],
+          nextId: prevState.nextId + 1,
+        }));
+        
+        console.log('Table pasted:', newTable);
+        return;
+      } else {
+        console.log('No table in clipboard to paste');
+        return;
+      }
+    }
+    
     if (e.key === 'Delete' || e.key === 'Backspace') {
       console.log('Delete/Backspace key detected');
-      
-      // Check if any text box is currently being edited
-      const activeElement = document.activeElement;
-      const isEditingText = activeElement && 
-        (activeElement.contentEditable === 'true' ||
-         activeElement.tagName === 'INPUT' ||
-         activeElement.tagName === 'TEXTAREA' ||
-         activeElement.closest('[contenteditable="true"]'));
       
       if (isEditingText) {
         console.log('Text is being edited, ignoring delete key for element deletion');
@@ -926,9 +1197,15 @@ export default class WorksheetCanvas extends Component {
         onDrop={this.handleDrop}
         onDragOver={this.handleDragOver}
         onClick={(e) => {
-          if (!e.target.classList.contains('table-drag-handle') && 
+          // Don't deselect if user is holding Shift (for multi-select)
+          // Don't deselect if clicking on table drag handle or after graph interaction
+          if (!e.shiftKey && 
+              !e.target.classList.contains('table-drag-handle') && 
               !this.state.justFinishedGraphInteraction) {
+            console.log('🔍 Canvas clicked - deselecting all (no Shift key)');
             this.handleDeselectAll();
+          } else if (e.shiftKey) {
+            console.log('🔍 Canvas clicked with Shift - preserving selection for multi-select');
           }
         }}
         style={{ 
@@ -989,9 +1266,10 @@ export default class WorksheetCanvas extends Component {
                 rowHeight={el.rowHeight}
                 cellValues={el.cellValues || []} 
                 isSelected={!!el.isSelected}
-                onSelect={() => this.handleSelectElement(el.id)}
+                onSelect={(id, event) => this.handleSelectElement(id, event)}
                 onDeselect={this.handleDeselectAll}
                 onUpdate={this.handleUpdateElement}
+                onMultiUpdate={this.handleMultiTableUpdate}
                 onCellChange={this.handleTableCellChange}
                 onProblemUsed={this.handleProblemUsed}
                 snapToGrid={this.props.snapToGrid}
@@ -1018,7 +1296,7 @@ export default class WorksheetCanvas extends Component {
                   overflow: 'hidden',
                   zIndex: 10 // Render graphs above tables
                 }}
-                onClick={() => this.handleSelectElement(el.id)}
+                onClick={(e) => this.handleSelectElement(el.id, e)}
                 onMouseDown={(e) => this.handleGraphMouseDown(e, el)}
               >
                 <img
