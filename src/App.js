@@ -12,7 +12,7 @@ import './ModePicker.css';
 import './WorksheetCanvas.css';
 import './AssetManager.css';
 
-const CLIENT_ID = '348553692233-mfqod16j10n6tl3dvru9jk6chvff7mmq.apps.googleusercontent.com';
+const CLIENT_ID = '';
 
 // localStorage keys for persistence
 const STORAGE_KEYS = {
