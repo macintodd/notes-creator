@@ -3,7 +3,7 @@ class DriveService {
     this.accessToken = accessToken;
     this.baseUrl = 'https://www.googleapis.com/drive/v3';
     this.uploadUrl = 'https://www.googleapis.com/upload/drive/v3';
-    this.appFolderName = 'Math Practice Creator';
+    this.appFolderName = 'Notes Creator';
     this.appFolderId = null; // Will be set when folder is found/created
   }
 
@@ -859,7 +859,7 @@ class DriveService {
 
     // State for navigation
     let currentFolderId = this.appFolderId;
-    let folderStack = [{ id: this.appFolderId, name: 'Math Practice Creator' }];
+    let folderStack = [{ id: this.appFolderId, name: 'Notes Creator' }];
 
     const updateBreadcrumb = () => {
       breadcrumb.innerHTML = folderStack.map((folder, index) => 

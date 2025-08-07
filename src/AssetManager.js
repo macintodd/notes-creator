@@ -12,6 +12,7 @@ const AssetManager = forwardRef(({
   onDragStart, 
   onPlaceTable,
   onPlaceGraph,
+  onPlaceText,
   usedProblems,
   // DocManager props
   isLoggedIn,
@@ -321,22 +322,6 @@ const AssetManager = forwardRef(({
     }
   };
 
-  const handleTextDragStart = (preset, e) => {
-    // Define actual text content for each preset type
-    const textContent = {
-      text: 'Click to edit text',
-      directions: 'Directions: Solve each of the following showing applicable work. Circle Final Answer.',
-      emphasis: 'Important Note',
-      hints: 'Hint: Remember to check your work'
-    };
-
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'text',
-      style: preset.style,
-      text: textContent[preset.style] || preset.label
-    }));
-  };
-
   const handleLoadProblemSets = async () => {
     if (!driveService || !isLoggedIn) {
       alert('Please sign in with Google to load problem sets');
@@ -541,12 +526,22 @@ const AssetManager = forwardRef(({
               <div
                 key={preset.id}
                 className={`text-preset-box ${preset.id}`}
-                draggable
-                onDragStart={(e) => handleTextDragStart(preset, e)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('📝 Text preset clicked:', preset.label);
+                  if (onPlaceText) {
+                    onPlaceText(preset);
+                  } else {
+                    console.error('onPlaceText is not defined!');
+                  }
+                }}
                 style={{
                   fontSize: preset.fontSize,
                   fontWeight: preset.fontWeight,
-                  fontStyle: preset.fontStyle
+                  fontStyle: preset.fontStyle,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto'
                 }}
               >
                 <div className="text-preset-label">{preset.label}</div>

@@ -1,23 +1,23 @@
-# Math Practice Creator
+# Notes Creator
 
-A React application for creating custom math worksheets with drag-and-drop functionality, LaTeX equation support, and Google Drive integration.
+A React application for creating custom notes and documents with drag-and-drop functionality, LaTeX equation support, and Google Drive integration.
 
 ## Features
 
-- 📝 Drag-and-drop worksheet creation
+- 📝 Drag-and-drop note creation
 - 🧮 LaTeX equation rendering with KaTeX
 - 📊 Customizable tables with auto-numbering
 - 🎨 Text formatting options (directions, emphasis, hints)
 - 📏 Table alignment and snap-to-grid functionality
-- ☁️ Google Drive integration for saving/loading worksheets
-- 🖨️ Professional worksheet formatting
+- ☁️ Google Drive integration for saving/loading documents
+- 🖨️ Professional document formatting
 
 ## Setup
 
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd math-practice-creator
+   cd notes-creator
    ```
 
 2. **Install dependencies**
@@ -48,7 +48,7 @@ A React application for creating custom math worksheets with drag-and-drop funct
 
 ## Usage
 
-1. **Creating Worksheets**
+1. **Creating Documents**
    - Use the AssetManager panel to drag text elements and tables onto the canvas
    - Drag problems from problem sets into table cells
    - Problems are automatically numbered sequentially
@@ -65,8 +65,8 @@ A React application for creating custom math worksheets with drag-and-drop funct
    - **Hints**: 8pt font, normal style
 
 4. **Saving/Loading**
-   - Connect to Google Drive to save worksheets
-   - Worksheets are saved as JSON files with .worksheet extension
+   - Connect to Google Drive to save documents
+   - Documents are saved as JSON files with .worksheet extension
 
 ## Security Note
 

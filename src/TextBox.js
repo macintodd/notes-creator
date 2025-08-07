@@ -1,13 +1,66 @@
 // TextBox.js (Class-based with drag, resize, select, edit)
 import React, { Component, createRef } from 'react';
 import TextFormatMenu from './TextFormatMenu';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 class TextBox extends Component {
+  // Handle mousedown on a resize handle
+  handleResizeMouseDown = (e, handle) => {
+    e.stopPropagation();
+    // Start resizing
+    const { width, height } = this.props;
+    this.setState({
+      resizeStart: {
+        x: e.clientX,
+        y: e.clientY,
+        width: width,
+        height: height,
+        handle: handle
+      }
+    });
+    // Add global listeners (already added in componentDidMount, so just set state)
+    // Prevent text selection while resizing
+    document.body.style.userSelect = 'none';
+  };
+
+  // Global mousemove for resizing
+  handleGlobalMouseMove = (e) => {
+    const { resizeStart } = this.state;
+    if (resizeStart) {
+      const dx = e.clientX - resizeStart.x;
+      const dy = e.clientY - resizeStart.y;
+      let newWidth = resizeStart.width;
+      let newHeight = resizeStart.height;
+      if (resizeStart.handle.includes('right')) newWidth += dx;
+      if (resizeStart.handle.includes('left')) newWidth -= dx;
+      if (resizeStart.handle.includes('bottom')) newHeight += dy;
+      if (resizeStart.handle.includes('top')) newHeight -= dy;
+      // Minimum size
+      newWidth = Math.max(40, newWidth);
+      newHeight = Math.max(24, newHeight);
+      // Update parent
+      if (this.props.onUpdate) {
+        this.props.onUpdate(this.props.id, {
+          width: newWidth,
+          height: newHeight
+        });
+      }
+    }
+  };
+
+  // Global mouseup for resizing
+  handleGlobalMouseUp = (e) => {
+    if (this.state.resizeStart) {
+      this.setState({ resizeStart: null });
+      document.body.style.userSelect = '';
+    }
+  };
   constructor(props) {
     super(props);
     this.state = {
       isEditing: props.initiallyEditing || false,
-      position: { x: props.x, y: props.y },
+      position: { x: props.x - 24, y: props.y },
       size: { width: props.width || 200, height: 'auto' }, // Default width, auto height
       dragStart: null,
       resizeStart: null,
@@ -29,9 +82,10 @@ class TextBox extends Component {
 
   componentDidUpdate(prevProps) {
     // Only update the contentEditable if we're not editing and the text changed
-    if (prevProps.text !== this.props.text && !this.state.isEditing && this.textRef.current) {
-      this.textRef.current.textContent = this.props.text || '';
-    }
+    // REMOVED: This line was causing the issue by setting textContent in the non-editing display div
+    // if (prevProps.text !== this.props.text && !this.state.isEditing && this.textRef.current) {
+    //   this.textRef.current.textContent = this.props.text || '';
+    // }
     
     // Show format menu when text box becomes selected
     if (!prevProps.isSelected && this.props.isSelected && !this.state.isEditing) {
@@ -97,120 +151,11 @@ class TextBox extends Component {
     }
   };
 
-  handleMouseDown = (e) => {
-    if (this.state.isEditing) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const { isSelected, onSelect } = this.props;
-    const { position } = this.state;
+  // Drag logic removed; handled by WorksheetCanvas
 
-    const isResizeHandle = e.target.dataset.handle;
-    if (isResizeHandle) {
-      this.setState({
-        resizeStart: {
-          x: e.clientX,
-          y: e.clientY,
-          width: this.state.size.width,
-          height: this.state.size.height,
-          position: { ...position },
-          handle: e.target.dataset.handle,
-        },
-      });
-      return;
-    }
+  // Drag logic removed; handled by WorksheetCanvas
 
-    if (!isSelected) {
-      onSelect?.();
-    }
-
-    this.setState({
-      dragStart: {
-        x: e.clientX,
-        y: e.clientY,
-        originX: position.x,
-        originY: position.y,
-      },
-    });
-  };
-
-  handleGlobalMouseMove = (e) => {
-    const { dragStart, resizeStart } = this.state;
-    const { snapToGrid = false } = this.props;
-    const gridSize = 24;
-
-    if (dragStart && !this.state.isEditing) {
-      e.preventDefault();
-      const dx = e.clientX - dragStart.x;
-      const dy = e.clientY - dragStart.y;
-      let newX = dragStart.originX + dx;
-      let newY = dragStart.originY + dy;
-      
-      // Apply snap-to-grid if enabled
-      if (snapToGrid) {
-        newX = Math.round(newX / gridSize) * gridSize;
-        newY = Math.round(newY / gridSize) * gridSize;
-      }
-      
-      const newPos = { x: newX, y: newY };
-      this.setState({ position: newPos });
-      this.props.onUpdate(this.props.id, { x: newPos.x, y: newPos.y });
-    }
-
-    if (resizeStart) {
-      e.preventDefault();
-      const dx = e.clientX - resizeStart.x;
-      const dy = e.clientY - resizeStart.y;
-      let newWidth = resizeStart.width;
-      let newHeight = resizeStart.height;
-      let newPos = { ...resizeStart.position };
-
-      // Handle different resize directions
-      if (resizeStart.handle.includes('right')) {
-        newWidth = Math.max(50, resizeStart.width + dx);
-      }
-      if (resizeStart.handle.includes('left')) {
-        const deltaWidth = resizeStart.width - dx;
-        if (deltaWidth >= 50) {
-          newWidth = deltaWidth;
-          newPos.x = resizeStart.position.x + dx;
-        }
-      }
-      if (resizeStart.handle.includes('bottom')) {
-        newHeight = Math.max(24, resizeStart.height + dy);
-      }
-      if (resizeStart.handle.includes('top')) {
-        const deltaHeight = resizeStart.height - dy;
-        if (deltaHeight >= 24) {
-          newHeight = deltaHeight;
-          newPos.y = resizeStart.position.y + dy;
-        }
-      }
-
-      // Apply snap-to-grid to position if enabled
-      if (snapToGrid) {
-        newPos.x = Math.round(newPos.x / gridSize) * gridSize;
-        newPos.y = Math.round(newPos.y / gridSize) * gridSize;
-      }
-
-      this.setState({ 
-        size: { width: newWidth, height: newHeight },
-        position: newPos
-      });
-      
-      this.props.onUpdate(this.props.id, {
-        width: newWidth,
-        height: newHeight,
-        x: newPos.x,
-        y: newPos.y
-      });
-    }
-  };
-
-  handleGlobalMouseUp = () => {
-    this.setState({ dragStart: null, resizeStart: null });
-  };
+  // Drag logic removed; handled by WorksheetCanvas
 
   handleMouseMove = (e) => {
     const { dragStart, resizeStart } = this.state;
@@ -329,6 +274,70 @@ class TextBox extends Component {
     }
   };
 
+  handleStrokeToggle = () => {
+    const { onUpdate, id, hasStroke = false } = this.props;
+    if (onUpdate) {
+      onUpdate(id, { hasStroke: !hasStroke });
+    }
+  };
+
+  // Parse text and render LaTeX expressions
+  parseAndRenderText = (text) => {
+    if (!text) return '';
+    
+    // Split text by $$....$$ pattern, keeping the delimiters for processing
+    const parts = text.split(/(\$\$[^$]*\$\$)/g);
+    
+    const renderedParts = parts.map((part, index) => {
+      // Check if this part is a LaTeX expression
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const latex = part.slice(2, -2); // Remove $$ delimiters
+        
+        if (latex.trim() === '') {
+          // Empty LaTeX expression, just return empty span
+          return <span key={index}></span>;
+        }
+        
+        try {
+          const html = katex.renderToString(latex, {
+            displayMode: false, // Inline mode
+            throwOnError: false,
+            errorColor: '#cc0000',
+            strict: 'warn'
+          });
+          return (
+            <span 
+              key={index}
+              dangerouslySetInnerHTML={{ __html: html }}
+              style={{ verticalAlign: 'middle' }}
+            />
+          );
+        } catch (error) {
+          // If LaTeX parsing fails, show the original text with error styling
+          return (
+            <span 
+              key={index}
+              style={{ 
+                color: '#cc0000', 
+                backgroundColor: '#ffeeee',
+                padding: '2px',
+                borderRadius: '2px'
+              }}
+              title={`LaTeX Error: ${error.message}`}
+            >
+              {part}
+            </span>
+          );
+        }
+      } else {
+        // Regular text (only render if not empty/whitespace-only)
+        return part ? <span key={index}>{part}</span> : null;
+      }
+    }).filter(Boolean); // Remove null/empty elements
+    
+    return renderedParts;
+  };
+
   renderHandles() {
     if (!this.props.isSelected || this.state.isEditing) return null;
     const handles = [
@@ -351,7 +360,9 @@ class TextBox extends Component {
         data-handle={h}
         onMouseDown={(e) => {
           e.stopPropagation();
-          this.handleMouseDown(e);
+          if (typeof this.handleResizeMouseDown === 'function') {
+            this.handleResizeMouseDown(e, h);
+          }
         }}
         style={{
           position: 'absolute',
@@ -376,7 +387,8 @@ class TextBox extends Component {
       text, 
       isSelected,
       style = 'regular', // Can be 'regular', 'directions', or 'emphasis'
-      backgroundColor = 'transparent'
+      backgroundColor = 'transparent',
+      hasStroke = false
     } = this.props;
     const { isEditing, position, size, showFormatMenu } = this.state;
 
@@ -414,15 +426,17 @@ class TextBox extends Component {
           ref={this.boxRef}
           style={{
             position: 'absolute',
-            left: position.x,
-            top: position.y,
-            width: size.width,
+            left: this.props.x,
+            top: this.props.y,
+            width: this.props.width,
             minHeight: 24,
-            height: size.height,
-            border: isSelected
-              ? isEditing ? '2px solid var(--fall-amber)' : '2px solid var(--fall-burnt-orange)'
-              : '1px solid var(--fall-light-taupe)',
-            padding: 6,
+            height: this.props.height,
+            border: hasStroke 
+              ? '1.5px solid black'
+              : isSelected
+                ? isEditing ? '2px solid var(--fall-amber)' : '2px solid var(--fall-burnt-orange)'
+                : '1px solid var(--fall-light-taupe)',
+            padding: 4,
             backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
             userSelect: isEditing ? 'text' : 'none',
             cursor: isEditing ? 'text' : 'move',
@@ -430,7 +444,7 @@ class TextBox extends Component {
             zIndex: isSelected ? 100 : 10, // Normal: 10 (above tables), Selected: 100 (top layer)
             ...textStyles
           }}
-          onMouseDown={this.handleMouseDown}
+          onMouseDown={isEditing ? undefined : this.props.onMouseDown}
           onDoubleClick={this.handleDoubleClick}
           onClick={(e) => e.stopPropagation()}
         >
@@ -446,24 +460,39 @@ class TextBox extends Component {
                 fontSize,
                 whiteSpace: 'pre-wrap',
                 overflowWrap: 'break-word',
+                display: 'block'
               }}
               onInput={this.handleInput}
               onBlur={this.handleBlur}
               onKeyDown={this.handleKeyDown}
             />
           ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                fontSize,
-                pointerEvents: 'none',
-                whiteSpace: 'pre-wrap',
-                overflowWrap: 'break-word',
-              }}
-            >
-              {text}
-            </div>
+            <>
+              {/* Hide the contentEditable div when not editing */}
+              <div
+                ref={this.textRef}
+                contentEditable={false}
+                style={{
+                  display: 'none',
+                  position: 'absolute',
+                  top: '-9999px',
+                  left: '-9999px'
+                }}
+              />
+              {/* Display div for rendered content */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  fontSize,
+                  pointerEvents: 'none',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word'
+                }}
+              >
+                {this.parseAndRenderText(text)}
+              </div>
+            </>
           )}
           {this.renderHandles()}
         </div>
@@ -474,7 +503,9 @@ class TextBox extends Component {
             x={position.x + size.width + 10}
             y={position.y}
             backgroundColor={backgroundColor}
+            hasStroke={hasStroke}
             onBackgroundColorChange={this.handleBackgroundColorChange}
+            onStrokeToggle={this.handleStrokeToggle}
             onClose={this.handleFormatMenuClose}
           />
         )}

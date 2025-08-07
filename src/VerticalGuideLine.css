@@ -1,0 +1,33 @@
+/* VerticalGuideLine.css */
+.vertical-guide-line {
+  transition: background-color 0.2s ease;
+}
+
+.vertical-guide-line.selected {
+  background-color: var(--fall-burnt-orange) !important;
+}
+
+.vertical-guide-line.locked {
+  opacity: 0.7;
+}
+
+.vertical-guide-line.unlocked {
+  opacity: 1;
+}
+
+.guide-line-handle {
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.guide-line-handle:hover {
+  background-color: var(--fall-burgundy) !important;
+}
+
+.guide-line-controls button {
+  transition: all 0.2s ease;
+}
+
+.guide-line-controls button:hover {
+  transform: scale(1.05);
+}

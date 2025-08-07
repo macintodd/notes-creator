@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Notes Creator",
+  "name": "Notes Creator - Drag and Drop Note Taking",
   "icons": [
     {
       "src": "favicon.ico",

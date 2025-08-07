@@ -7,6 +7,8 @@ import { BlockMath } from 'react-katex';
 import './WorksheetCanvas.css';
 import Header from './Header';
 import Footer from './Footer';
+import NotesPrompt from './NotesPrompt';
+import VerticalGuideLine from './VerticalGuideLine';
 import PropTypes from 'prop-types';
 
 export default class WorksheetCanvas extends Component {
@@ -32,12 +34,33 @@ export default class WorksheetCanvas extends Component {
       },
       graphDragState: null,
       graphResizeState: null,
-      clipboardTable: null // Store copied table structure
+      textboxDragState: null, // Track textbox drag state
+      clipboardTable: null, // Store copied table structure
+      // Guided notes features
+      verticalGuideLineX: 144, // 2.0 inches from left (1.75 + 0.25) * 72 = 144px
+      showNotesPrompt: true,
+      notesPromptText: "Ur notes and\nquestions"
     };
     this.gridSize = 24;
     this.contentRef = React.createRef();
     this.lastPasteTime = 0; // Prevent duplicate paste operations
   }
+
+  // TextBox drag logic (now matches TableBlock)
+  handleTextBoxMouseDown = (e, element) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.handleSelectElement(element.id, null);
+    this.setState({
+      textboxDragState: {
+        id: element.id,
+        startX: e.clientX,
+        startY: e.clientY,
+        originalX: element.x,
+        originalY: element.y
+      }
+    });
+  };
 
   snapToGrid = (value) => {
     const grid = this.gridSize;
@@ -61,6 +84,16 @@ export default class WorksheetCanvas extends Component {
       elements: [...prevState.elements, newTextBox],
       nextId: prevState.nextId + 1,
     }));
+  };
+
+  // Handler for vertical guide line position changes
+  handleVerticalGuideLineChange = (newX) => {
+    this.setState({ verticalGuideLineX: newX });
+  };
+
+  // Handler for notes prompt text changes
+  handleNotesPromptChange = (newText) => {
+    this.setState({ notesPromptText: newText });
   };
 
   // Helper function to find table alignment for dragged tables
@@ -176,7 +209,9 @@ export default class WorksheetCanvas extends Component {
 
   handleAddTable = (tableConfig) => {
     const tableCount = this.state.elements.filter(el => el.type === 'table').length;
-    let tableX = 24; // left margin
+    
+    // Position table to the right of vertical guide line (requirement #7)
+    let tableX = this.state.verticalGuideLineX + 10; // 10px margin from guide line
     
     // Calculate position based on current scroll position
     const currentScrollY = window.scrollY || document.documentElement.scrollTop;
@@ -192,7 +227,10 @@ export default class WorksheetCanvas extends Component {
     const maxY = 2112 - 200; // Two-page height minus table height margin
     tableY = Math.min(Math.max(60, tableY), maxY); // Minimum 60px from top, maximum maxY
     
-    const tableWidth = 816 - 48; // worksheet width minus 2*24px margins
+    // Table width extends from guide line to right margin (1/4 inch from right edge)
+    const rightMargin = 18; // 1/4 inch = 18px (1/4 * 72 = 18)
+    const worksheetWidth = 816; // 8.5" * 72 dpi = 612, but canvas is 816
+    const tableWidth = worksheetWidth - tableX - rightMargin;
     
     // Check for table alignment opportunities (only when snap-to-grid is off)
     const alignment = this.findTableAlignment(tableY, tableX, tableWidth);
@@ -251,6 +289,52 @@ export default class WorksheetCanvas extends Component {
 
     this.setState((prevState) => ({
       elements: [...prevState.elements, newGraph],
+      nextId: prevState.nextId + 1,
+    }));
+  };
+
+  handleAddText = (textPreset) => {
+    console.log('� Adding text box:', textPreset.label);
+    
+    // Calculate position based on current scroll position - similar to table placement
+    const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+    const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
+    const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
+    
+    // Position text near the middle of current view, but ensure it's within worksheet bounds
+    const viewportHeight = window.innerHeight;
+    let textY = relativeScrollY + (viewportHeight * 0.3); // 30% down from top of current view
+    
+    // Ensure the text stays within worksheet bounds (with some margin)
+    const maxY = 2112 - 100; // Two-page height minus text height margin
+    textY = Math.min(Math.max(60, textY), maxY); // Minimum 60px from top, maximum maxY
+    
+    // Position text to the right of vertical guide line (similar to tables)
+    let textX = this.state.verticalGuideLineX; // 10px margin from guide line
+
+    // Snap to grid if enabled
+    if (this.props.snapToGrid) {
+      textX = this.snapToGrid(textX);
+      textY = this.snapToGrid(textY);
+    }
+
+    const newTextBox = {
+      id: this.state.nextId,
+      type: 'textbox',
+      x: textX,
+      y: textY,
+      text: textPreset.preview, // Changed from 'content' to 'text'
+      fontSize: textPreset.fontSize,
+      fontWeight: textPreset.fontWeight,
+      fontStyle: textPreset.fontStyle,
+      width: 300, // Default width, adjustable by user
+      height: 50, // Default height, adjustable by user
+      isSelected: false,
+      hasStroke: false, // Default to no stroke
+    };
+
+    this.setState((prevState) => ({
+      elements: [...prevState.elements, newTextBox],
       nextId: prevState.nextId + 1,
     }));
   };
@@ -582,7 +666,7 @@ export default class WorksheetCanvas extends Component {
   };
 
   handleGraphGlobalMouseMove = (e) => {
-    const { graphDragState, graphResizeState } = this.state;
+    const { graphDragState, graphResizeState, textboxDragState } = this.state;
     const { snapToGrid = false } = this.props;
     const gridSize = this.gridSize;
 
@@ -592,14 +676,27 @@ export default class WorksheetCanvas extends Component {
       const dy = e.clientY - graphDragState.startY;
       let newX = graphDragState.startLeft + dx;
       let newY = graphDragState.startTop + dy;
-      
       // Apply snap-to-grid if enabled
       if (snapToGrid) {
         newX = Math.round(newX / gridSize) * gridSize;
         newY = Math.round(newY / gridSize) * gridSize;
       }
-      
       this.handleUpdateElement(graphDragState.id, { x: newX, y: newY });
+    }
+
+    if (textboxDragState) {
+      e.preventDefault();
+      const dx = e.clientX - textboxDragState.startX;
+      const dy = e.clientY - textboxDragState.startY;
+      let newX, newY;
+      if (snapToGrid) {
+        newX = Math.round((textboxDragState.originalX + dx) / gridSize) * gridSize;
+        newY = Math.round((textboxDragState.originalY + dy) / gridSize) * gridSize;
+      } else {
+        newX = textboxDragState.originalX + dx;
+        newY = textboxDragState.originalY + dy;
+      }
+      this.handleUpdateElement(textboxDragState.id, { x: newX, y: newY });
     }
 
     if (graphResizeState) {
@@ -651,15 +748,17 @@ export default class WorksheetCanvas extends Component {
   handleGraphGlobalMouseUp = () => {
     const hadGraphDragState = this.state.graphDragState !== null;
     const hadGraphResizeState = this.state.graphResizeState !== null;
-    
+    const hadTextboxDragState = this.state.textboxDragState !== null;
+
     this.setState({
       graphDragState: null,
       graphResizeState: null,
-      justFinishedGraphInteraction: hadGraphDragState || hadGraphResizeState
+      textboxDragState: null,
+      justFinishedGraphInteraction: hadGraphDragState || hadGraphResizeState || hadTextboxDragState
     });
-    
+
     // Clear the flag after a brief delay to allow the click event to process
-    if (hadGraphDragState || hadGraphResizeState) {
+    if (hadGraphDragState || hadGraphResizeState || hadTextboxDragState) {
       setTimeout(() => {
         this.setState({ justFinishedGraphInteraction: false });
       }, 50);
@@ -905,8 +1004,8 @@ export default class WorksheetCanvas extends Component {
     // Define style-specific settings
     let fontSize, fontWeight, fontStyle, text, textWidth, textX;
     
-    // Set default position and width
-    textX = x;
+    // Position text to the right of the vertical guide line (requirement #6)
+    textX = this.state.verticalGuideLineX + 10; // 10px margin from guide line
     textWidth = 200;
     
     // Handle different text styles with specific formatting
@@ -923,9 +1022,7 @@ export default class WorksheetCanvas extends Component {
         fontWeight = 'bold';
         fontStyle = 'italic';
         text = 'Directions: Solve each of the following showing applicable work. Circle Final Answer.';
-        // Align to left margin
-        textX = 24; // Use the same left margin as tables
-        // Make width wide enough for the directions text
+        // For directions, use wider text area
         textWidth = Math.max(600, text.length * 7); // Roughly 7px per character, minimum 600px
         break;
         
@@ -1218,6 +1315,38 @@ export default class WorksheetCanvas extends Component {
           lesson={header.lesson}
           title={header.title}
         />
+        
+        {/* Horizontal line separator */}
+        <div 
+          style={{
+            position: 'absolute',
+            left: 24,
+            right: 24,
+            top: 42, // 4 pixels below header text (24px header top + 14px font height + 4px gap)
+            height: '1px',
+            backgroundColor: '#000',
+            zIndex: 5
+          }}
+        />
+        
+        {/* Notes prompt */}
+        {this.state.showNotesPrompt && (
+          <NotesPrompt 
+            x={24} // Align with grid left margin
+            y={50} // Positioned just below the horizontal line
+            width={(this.state.verticalGuideLineX + 32) / 2} // About half the distance to the guide line
+            initialText={this.state.notesPromptText}
+            onUpdate={this.handleNotesPromptChange}
+          />
+        )}
+        
+        {/* Vertical guide line */}
+        <VerticalGuideLine
+          initialX={this.state.verticalGuideLineX}
+          onPositionChange={this.handleVerticalGuideLineChange}
+          canvasHeight={1584}
+        />
+        
         <Footer 
           title={header.title}
           isPage2={false}
@@ -1244,8 +1373,8 @@ export default class WorksheetCanvas extends Component {
                 fontStyle={el.fontStyle}
                 strokeWidth={el.strokeWidth}
                 isSelected={!!el.isSelected}
-                snapToGrid={this.props.snapToGrid}
                 backgroundColor={el.backgroundColor || 'transparent'}
+                hasStroke={el.hasStroke || false}
                 onSelect={() => this.handleSelectElement(el.id)}
                 onDeselect={this.handleDeselectAll}
                 onUpdate={this.handleUpdateElement}
@@ -1312,6 +1441,43 @@ export default class WorksheetCanvas extends Component {
                 />
                 {el.isSelected && this.renderGraphHandles(el)}
               </div>
+            );
+          }
+
+          if (el.type === 'textbox') {
+            // IMPORTANT: The onMouseDown handler must be attached to the outermost div in TextBox.js for dragging to work.
+            // If TextBox renders a contentEditable or input, make sure the wrapper div has onMouseDown={props.onMouseDown}.
+            return (
+              <TextBox
+                key={el.id}
+                id={el.id}
+                x={el.x}
+                y={el.y}
+                width={el.width}
+                height={el.height}
+                text={el.text}
+                fontSize={el.fontSize}
+                fontWeight={el.fontWeight}
+                fontStyle={el.fontStyle}
+                hasStroke={el.hasStroke}
+                isSelected={!!el.isSelected}
+                onSelect={(id, event) => this.handleSelectElement(id, event)}
+                onDeselect={this.handleDeselectAll}
+                onUpdate={this.handleUpdateElement}
+                onMouseDown={(e) => this.handleTextBoxMouseDown(e, el)}
+                style={{
+                  position: 'absolute',
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  cursor: 'move',
+                  zIndex: 20,
+                  pointerEvents: 'auto',
+                  background: 'transparent',
+                  userSelect: 'none',
+                }}
+              />
             );
           }
 

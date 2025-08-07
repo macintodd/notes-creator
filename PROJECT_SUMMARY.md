@@ -1,7 +1,7 @@
-# Math Practice Creator - Project Summary
+# Notes Creator - Project Summary
 
 ## Project Overview
-A React-based web application for creating mathematics worksheets with Google Drive integration. The app features a drag-and-drop interface for creating professional math worksheets with tables, graphs, text boxes, and problem sets.
+A React-based web application for creating notes and documents with Google Drive integration. The app features a drag-and-drop interface for creating professional documents with tables, graphs, text boxes, and problem sets.
 
 ## Current Status: WORKING & STABLE
 - ✅ Fall color theme fully implemented
@@ -26,7 +26,7 @@ A React-based web application for creating mathematics worksheets with Google Dr
 - **Zoom Controls**: Mouse-centered zooming with Ctrl/Cmd + scroll
 
 ### 2. Asset Management
-- **Problem Sets**: Reusable math problems organized by unit/lesson
+- **Problem Sets**: Reusable content organized by unit/lesson
 - **Table Creation**: Customizable rows/columns with border controls
 - **Graph Integration**: Mathematical graphs and charts
 - **Header/Footer**: Unit, lesson, title metadata
@@ -131,7 +131,7 @@ src/
 ### File Organization
 ```
 Google Drive/
-└── Math Practice Creator/
+└── Notes Creator/
     ├── Unit 1/
     │   ├── Worksheets/
     │   ├── Problem Sets/
@@ -161,7 +161,7 @@ Google Drive/
 ```
 
 ## Known Working Features
-- ✅ Worksheet creation and editing
+- ✅ Document creation and editing
 - ✅ Table insertion with customizable borders
 - ✅ Text box creation and editing
 - ✅ Problem set management

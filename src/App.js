@@ -22,9 +22,9 @@ if (!CLIENT_ID) {
 
 // localStorage keys for persistence
 const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'math_practice_access_token',
-  USER_NAME: 'math_practice_user_name',
-  LOGIN_TIMESTAMP: 'math_practice_login_timestamp'
+  ACCESS_TOKEN: 'notes_creator_access_token',
+  USER_NAME: 'notes_creator_user_name',
+  LOGIN_TIMESTAMP: 'notes_creator_login_timestamp'
 };
 
 // Create inner component to use hooks
@@ -50,7 +50,7 @@ function AppContent() {
   const [driveService, setDriveService] = useState(null);
   const [currentFile, setCurrentFile] = useState(() => {
     // Try to load from localStorage on startup
-    const saved = localStorage.getItem('currentWorksheetFile');
+    const saved = localStorage.getItem('currentDocumentFile');
     return saved ? JSON.parse(saved) : null;
   });
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
@@ -107,9 +107,9 @@ function AppContent() {
   // Persist currentFile to localStorage whenever it changes
   useEffect(() => {
     if (currentFile) {
-      localStorage.setItem('currentWorksheetFile', JSON.stringify(currentFile));
+      localStorage.setItem('currentDocumentFile', JSON.stringify(currentFile));
     } else {
-      localStorage.removeItem('currentWorksheetFile');
+      localStorage.removeItem('currentDocumentFile');
     }
   }, [currentFile]);
 
@@ -974,7 +974,7 @@ function AppContent() {
             const pdfBlob = pdf.output('blob');
             console.log('PDF blob created, size:', pdfBlob.size);
             
-            const folderPath = `Math Practice Creator/Unit ${headerInfo.unit}/Worksheet PDFs`;
+            const folderPath = `Notes Creator/Unit ${headerInfo.unit}/Worksheet PDFs`;
             console.log('Saving to folder path:', folderPath);
             
             await serviceToUse.savePDFFile(filename, pdfBlob, folderPath);
@@ -1082,6 +1082,14 @@ function AppContent() {
         onPlaceGraph={(graphData) => {
           if (worksheetRef.current) {
             worksheetRef.current.handleAddGraph(graphData);
+          }
+        }}
+        onPlaceText={(textPreset) => {
+          console.log('📝 Placing text:', textPreset.label);
+          if (worksheetRef.current) {
+            worksheetRef.current.handleAddText(textPreset);
+          } else {
+            console.error('❌ worksheetRef.current is null!');
           }
         }}
         usedProblems={usedProblems}

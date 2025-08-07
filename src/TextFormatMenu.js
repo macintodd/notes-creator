@@ -62,6 +62,15 @@ class TextFormatMenu extends Component {
     }
   };
 
+  handleStrokeToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { onStrokeToggle } = this.props;
+    if (onStrokeToggle) {
+      onStrokeToggle();
+    }
+  };
+
   toggleColorPicker = () => {
     this.setState(prevState => ({
       showColorPicker: !prevState.showColorPicker
@@ -70,7 +79,9 @@ class TextFormatMenu extends Component {
 
   render() {
     const { position, showColorPicker } = this.state;
-    const { onClose, backgroundColor = 'transparent' } = this.props;
+    const { onClose, backgroundColor = 'transparent', hasStroke = false } = this.props;
+    
+    console.log('TextFormatMenu render - hasStroke:', hasStroke); // Debug log
 
     return (
       <div
@@ -222,6 +233,51 @@ class TextFormatMenu extends Component {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Stroke Toggle Section */}
+          <div style={{ marginBottom: '8px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: 'transparent'
+              }}
+              onClick={this.handleStrokeToggle}
+            >
+              <span>Text Stroke</span>
+              {/* Toggle Switch */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '40px',
+                  height: '20px',
+                  backgroundColor: hasStroke ? 'var(--fall-burnt-orange)' : 'var(--fall-light-taupe)',
+                  borderRadius: '10px',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+              >
+                {/* Toggle Circle */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    left: hasStroke ? '20px' : '2px',
+                    width: '16px',
+                    height: '16px',
+                    backgroundColor: 'white',
+                    borderRadius: '50%',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
