@@ -1465,6 +1465,7 @@ export default class WorksheetCanvas extends Component {
                 onDeselect={this.handleDeselectAll}
                 onUpdate={this.handleUpdateElement}
                 onMouseDown={(e) => this.handleTextBoxMouseDown(e, el)}
+                backgroundColor={el.backgroundColor || 'transparent'}
                 style={{
                   position: 'absolute',
                   left: el.x,
