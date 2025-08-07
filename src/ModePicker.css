@@ -1,14 +1,26 @@
-/* ModePicker.css */
+/* ModePicker.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
 
 .mode-picker {
   display: flex;
   flex-direction: row;
   align-items: flex-start;            /* Ensures vertical alignment */
-  background: #f9f9f9;
-  border: 1px solid #ccc;
+  background: var(--fall-cream);
+  border: 1px solid var(--fall-taupe);
   border-radius: 12px;
   padding: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(62, 39, 35, 0.15);
   z-index: 1000;
   width: fit-content;
 }
@@ -23,21 +35,23 @@
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background-color: #f5f5f5;
+  background-color: var(--fall-light-taupe);
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
   min-width: 100px; /* Better padding balance */
   text-align: center;
+  color: var(--fall-charcoal);
 }
 
 .mode-button.active {
-  background-color: #4a90e2;
+  background-color: var(--fall-burnt-orange);
   color: white;
 }
 
 .mode-button:hover {
-  background-color: #ddd;
+  background-color: var(--fall-amber);
+  color: var(--fall-charcoal);
 }
 
 .zoom-controls {
@@ -46,8 +60,8 @@
   justify-content: center;
   align-items: center;
   margin-left: 12px;
-  background-color: #f9f9f9;
-  border-left: 1px solid #ddd;
+  background-color: var(--fall-sage);
+  border-left: 1px solid var(--fall-light-taupe);
   padding: 4px 8px;
   border-radius: 8px;
 }
@@ -58,20 +72,20 @@
   font-size: 18px;
   margin: 6px 0;
   border: none;
-  background-color: #eaeaea;
+  background-color: var(--fall-cream);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
 .zoom-controls button:hover {
-  background-color: #ccc;
+  background-color: var(--fall-light-taupe);
 }
 
 .zoom-controls .reset {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: var(--fall-charcoal);
   background-color: transparent;
   cursor: default;
   border: none;

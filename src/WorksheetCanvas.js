@@ -697,8 +697,8 @@ export default class WorksheetCanvas extends Component {
           position: 'absolute',
           width: 8,
           height: 8,
-          backgroundColor: '#007bff',
-          border: '1px solid white',
+          backgroundColor: 'var(--fall-burnt-orange)',
+          border: '1px solid var(--fall-cream)',
           borderRadius: '50%',
           cursor: `${handle}-resize`,
           zIndex: 110,
@@ -1033,21 +1033,21 @@ export default class WorksheetCanvas extends Component {
     // Vertical lines for both pages
     for (let x = margin; x <= width - margin; x += this.gridSize) {
       lines.push(
-        <line key={`v-${x}`} x1={x} y1={margin} x2={x} y2={height - margin} stroke="#ddd" strokeWidth="1" />
+        <line key={`v-${x}`} x1={x} y1={margin} x2={x} y2={height - margin} stroke="var(--fall-light-taupe)" strokeWidth="1" />
       );
     }
     
     // Horizontal lines for page 1
     for (let y = margin; y <= pageHeight - margin; y += this.gridSize) {
       lines.push(
-        <line key={`h1-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="#ddd" strokeWidth="1" />
+        <line key={`h1-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="var(--fall-light-taupe)" strokeWidth="1" />
       );
     }
     
     // Horizontal lines for page 2
     for (let y = pageHeight + margin; y <= height - margin; y += this.gridSize) {
       lines.push(
-        <line key={`h2-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="#ddd" strokeWidth="1" />
+        <line key={`h2-${y}`} x1={margin} y1={y} x2={width - margin} y2={y} stroke="var(--fall-light-taupe)" strokeWidth="1" />
       );
     }
     
@@ -1289,7 +1289,7 @@ export default class WorksheetCanvas extends Component {
                   top: el.y,
                   width: el.width,
                   height: el.height,
-                  border: el.isSelected ? '2px solid #007bff' : '1px solid #ddd',
+                  border: el.isSelected ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
                   borderRadius: 4,
                   cursor: 'move',
                   background: 'white',
@@ -1326,8 +1326,8 @@ export default class WorksheetCanvas extends Component {
                   top: el.y,
                   width: el.width,
                   height: el.height,
-                  background: '#fffbe6',
-                  border: '1px solid #ccc',
+                  background: 'var(--fall-light-taupe)',
+                  border: '1px solid var(--fall-taupe)',
                   borderRadius: 4,
                   padding: 8,
                   cursor: 'move',

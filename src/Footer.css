@@ -1,3 +1,15 @@
+/* Fall Color Palette */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
+
 .worksheet-footer {
   position: absolute;
   left: 24px; /* 1/4 inch from left edge */
@@ -7,7 +19,7 @@
   font-size: 8pt; /* 8 point font as requested */
   font-family: Arial, sans-serif;
   z-index: 5;
-  color: #666;
+  color: var(--fall-taupe);
 }
 
 /* First page footer positioning - at bottom of page 1 */

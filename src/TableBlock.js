@@ -154,12 +154,12 @@ export default function TableBlock({
     e.preventDefault();
     e.stopPropagation();
     // Add visual feedback
-    e.currentTarget.style.backgroundColor = '#e3f2fd';
+    e.currentTarget.style.backgroundColor = 'var(--fall-sage)';
   };
 
   // Add this new handler to remove highlight
   const handleCellDragLeave = (e) => {
-    e.currentTarget.style.backgroundColor = '#fafcff';
+    e.currentTarget.style.backgroundColor = 'var(--fall-cream)';
   };
 
   // Table drag logic (unchanged)
@@ -375,9 +375,9 @@ export default function TableBlock({
           width: width,
           minHeight: currentRowHeight,
           background: '#fff',
-          border: isSelected ? '2px solid #1976d2' : '1px solid #bbb',
+          border: isSelected ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
           borderRadius: 6,
-          boxShadow: isSelected ? '0 2px 8px #1976d233' : '0 1px 4px #bbb3',
+          boxShadow: isSelected ? '0 2px 8px rgba(210, 105, 30, 0.3)' : '0 1px 4px rgba(160, 147, 139, 0.3)',
           padding: 0,
           zIndex: isSelected ? 100 : 1, // Normal: 1 (base layer), Selected: 100 (top layer)
           userSelect: 'none',
@@ -405,12 +405,12 @@ export default function TableBlock({
         <div className="table-drag-handle" style={{
           width: 24,
           height: currentRowHeight + 20, // Add 20px for cell padding (16px) + cell borders (4px)
-          background: '#eee',
+          background: 'var(--fall-light-taupe)',
           position: 'absolute',
           left: -24,
           top: 0,
           cursor: 'grab',
-          borderRight: '1px solid #ccc',
+          borderRight: '1px solid var(--fall-taupe)',
           zIndex: 2, // Always visible relative to its table
         }} title="Drag to move table" />
         
@@ -444,12 +444,12 @@ export default function TableBlock({
               className="table-cell"
               style={{
                 minHeight: currentRowHeight,
-                borderRight: colIdx < columns - 1 && !hiddenBorders.has(colIdx) ? '2px solid #000' : (colIdx === columns - 1 ? '2px solid #000' : 'none'),
-                borderBottom: '2px solid #000',
-                borderLeft: colIdx === 0 ? '2px solid #000' : 'none',
-                borderTop: '2px solid #000',
+                borderRight: colIdx < columns - 1 && !hiddenBorders.has(colIdx) ? '2px solid var(--fall-charcoal)' : (colIdx === columns - 1 ? '2px solid var(--fall-charcoal)' : 'none'),
+                borderBottom: '2px solid var(--fall-charcoal)',
+                borderLeft: colIdx === 0 ? '2px solid var(--fall-charcoal)' : 'none',
+                borderTop: '2px solid var(--fall-charcoal)',
                 padding: 8,
-                background: '#fafcff',
+                background: 'var(--fall-cream)',
                 position: 'relative',
                 cursor: editingCell === colIdx ? 'text' : 'pointer',
                 transition: 'background-color 0.2s'
@@ -504,7 +504,7 @@ export default function TableBlock({
                   style={{
                     width: '100%',
                     fontSize: '10pt', // Changed from '1em' to '10pt'
-                    border: '1px solid #bbb',
+                    border: '1px solid var(--fall-taupe)',
                     borderRadius: 3,
                     padding: 4,
                     resize: 'none',
@@ -547,7 +547,7 @@ export default function TableBlock({
             left: showBorderMenu.x,
             top: showBorderMenu.y,
             background: 'white',
-            border: '1px solid #ccc',
+            border: '1px solid var(--fall-taupe)',
             borderRadius: 4,
             padding: 8,
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',

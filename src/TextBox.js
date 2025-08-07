@@ -357,8 +357,8 @@ class TextBox extends Component {
           position: 'absolute',
           width: 8,
           height: 8,
-          backgroundColor: 'blue',
-          border: '1px solid white',
+          backgroundColor: 'var(--fall-burnt-orange)',
+          border: '1px solid var(--fall-cream)',
           borderRadius: '50%',
           cursor: `${h}-resize`,
           zIndex: 110, // Above selected text boxes
@@ -420,8 +420,8 @@ class TextBox extends Component {
             minHeight: 24,
             height: size.height,
             border: isSelected
-              ? isEditing ? '2px solid green' : '2px solid blue'
-              : '1px solid #ccc',
+              ? isEditing ? '2px solid var(--fall-amber)' : '2px solid var(--fall-burnt-orange)'
+              : '1px solid var(--fall-light-taupe)',
             padding: 6,
             backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
             userSelect: isEditing ? 'text' : 'none',

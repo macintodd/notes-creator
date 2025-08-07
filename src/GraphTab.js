@@ -26,7 +26,7 @@ const DEFAULT_CONFIG = {
   showGridlines: true,
   showTicks: false,
   gridDarkness: 'light', // 'light' or 'dark'
-  gridColor: '#cccccc',
+  gridColor: '#d4c7c0',
   xLabel: '',
   yLabel: '',
   functionText: '3*x',
@@ -80,7 +80,7 @@ export default function GraphTab({ onPlaceGraph }) {
 
   const drawGrid = (ctx, width, height, xScale, yScale, toCanvasX, toCanvasY) => {
     // Set gridline color based on darkness setting
-    const gridColor = config.gridDarkness === 'dark' ? '#181818ff' : '#cccccc';
+    const gridColor = config.gridDarkness === 'dark' ? '#3e2723' : '#d4c7c0';
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     ctx.setLineDash([]);
@@ -201,7 +201,7 @@ export default function GraphTab({ onPlaceGraph }) {
             const canvasY = toCanvasY(y);
             
             // Only draw if point is within canvas bounds
-            if (canvasY >= 0 && canvasY <= 400) {
+            if (canvasY >= 0 && canvasY <= 200) {
               if (firstPoint) {
                 ctx.moveTo(canvasX, canvasY);
                 firstPoint = false;
@@ -234,8 +234,8 @@ export default function GraphTab({ onPlaceGraph }) {
     const graphData = {
       config: { ...config },
       imageData: canvas.toDataURL('image/png'),
-      width: 400,
-      height: 400
+      width: 200,
+      height: 200
     };
 
     onPlaceGraph(graphData);
@@ -382,8 +382,8 @@ export default function GraphTab({ onPlaceGraph }) {
       <div className="graph-preview-wrapper" onClick={handlePlaceGraph}>
         <canvas
           ref={canvasRef}
-          width={400}
-          height={400}
+          width={200}
+          height={200}
           className="graph-preview-canvas"
         />
         <div className="preview-overlay">Click to place graph</div>

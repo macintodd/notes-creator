@@ -1,14 +1,28 @@
+/* DocManager.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
+
 .doc-manager {
-  background: #fff;
+  background: var(--fall-cream);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(62, 39, 35, 0.1);
   padding: 12px;
   min-width: 300px;
 }
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--fall-light-taupe);
   margin-bottom: 12px;
 }
 
@@ -18,11 +32,12 @@
   background: none;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  color: var(--fall-charcoal);
 }
 
 .tab-button.active {
-  border-bottom-color: #007AFF;
-  color: #007AFF;
+  border-bottom-color: var(--fall-burnt-orange);
+  color: var(--fall-burnt-orange);
 }
 
 .tab-content {
@@ -49,14 +64,16 @@
 .input-group input {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--fall-taupe);
   border-radius: 4px;
+  background-color: var(--fall-cream);
+  color: var(--fall-charcoal);
 }
 
 .document-title {
   margin-top: 8px;
   padding: 8px;
-  background: #f5f5f5;
+  background: var(--fall-sage);
   border-radius: 4px;
   font-family: monospace;
 }
@@ -71,13 +88,13 @@
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
-  background: #007AFF;
+  background: var(--fall-burnt-orange);
   color: white;
   cursor: pointer;
 }
 
 .file-operations button:disabled {
-  background: #ccc;
+  background: var(--fall-taupe);
   cursor: not-allowed;
 }
 
@@ -87,7 +104,7 @@
   align-items: center;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--fall-light-taupe);
 }
 
 .user-info {
@@ -103,7 +120,7 @@
 }
 
 .save-button {
-  background-color: #007bff;
+  background-color: var(--fall-burnt-orange);
   color: white;
   padding: 8px 16px;
   border: none;
@@ -113,7 +130,7 @@
 }
 
 .save-button.saved {
-  background-color: #28a745;
+  background-color: var(--fall-burgundy);
 }
 
 .save-button:disabled {

@@ -1,9 +1,21 @@
-/* WorksheetCanvas.css */
+/* WorksheetCanvas.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
 
 .worksheet-canvas-container {
   position: relative;
   flex: 1;
-  background-color: #f4f4f4;
+  background-color: var(--fall-sage);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,9 +33,9 @@
   position: relative;
   width: 816px; /* 8.5" * 96 dpi */
   height: 2112px; /* 22" * 96 dpi (two 11" pages) */
-  background-color: white;
-  border: 1px solid black;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  background-color: var(--fall-cream);
+  border: 1px solid var(--fall-taupe);
+  box-shadow: 0 4px 20px rgba(62, 39, 35, 0.15);
   overflow: visible; /* Ensure absolutely positioned children are visible */
   transform-origin: top left; /* Help with zoom stability */
   outline: none; /* Remove default focus outline for better UX */
@@ -44,9 +56,9 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #ddd;
-  border-top: 1px dashed #999;
-  border-bottom: 1px dashed #999;
+  background: var(--fall-light-taupe);
+  border-top: 1px dashed var(--fall-taupe);
+  border-bottom: 1px dashed var(--fall-taupe);
   pointer-events: none;
   z-index: 1;
 }

@@ -1,10 +1,22 @@
-/* App.css */
+/* App.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
 
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f0f0f0;
+  background-color: var(--fall-sage);
 }
 
 .app-content {
@@ -14,7 +26,7 @@
   padding: 20px;
   padding-left: 116px; /* 20px base + 96px for 1 inch margin */
   min-height: 100vh;
-  background-color: #f0f0f0;
+  background-color: var(--fall-sage);
 }
 
 .editor-container {
@@ -27,7 +39,7 @@
   overflow: auto;
   height: 100vh;
   width: 100vw;
-  background: #eee;
+  background: var(--fall-sage);
   position: relative;
 }
 
@@ -38,6 +50,7 @@
   padding: 20px;
   padding-left: 116px; /* 20px base + 96px for 1 inch margin */
   min-height: 100%; /* Ensure full height */
+  background-color: var(--fall-sage);
 }
 
 .zoom-controls {
@@ -62,10 +75,17 @@
   right: 300px;
   z-index: 1001;
   padding: 6px 10px;
-  background-color: #f5f5f5;
-  border: 1px solid #aaa;
+  background-color: var(--fall-cream);
+  border: 1px solid var(--fall-taupe);
   border-radius: 6px;
   cursor: pointer;
+  color: var(--fall-charcoal);
+  transition: all 0.2s ease;
+}
+
+.toggle-asset-manager:hover {
+  background-color: var(--fall-amber);
+  border-color: var(--fall-burnt-orange);
 }
 
 .dialog-overlay {
@@ -82,10 +102,11 @@
 }
 
 .dialog {
-  background: white;
+  background: var(--fall-cream);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(62, 39, 35, 0.3);
+  border: 1px solid var(--fall-taupe);
 }
 
 .dialog-buttons {
@@ -100,14 +121,23 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .dialog button:first-child {
-  background: #dc3545;
-  color: white;
+  background: var(--fall-burgundy);
+}
+
+.dialog button:first-child:hover {
+  background: #a0522d;
 }
 
 .dialog button:last-child {
-  background: #6c757d;
-  color: white;
+  background: var(--fall-taupe);
+}
+
+.dialog button:last-child:hover {
+  background: #8b7d76;
 }

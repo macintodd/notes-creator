@@ -80,10 +80,10 @@ class TextFormatMenu extends Component {
           position: 'absolute',
           left: position.x,
           top: position.y,
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
+          backgroundColor: 'var(--fall-cream)',
+          border: '1px solid var(--fall-taupe)',
           borderRadius: '6px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          boxShadow: '0 4px 12px rgba(62, 39, 35, 0.15)',
           zIndex: 200, // Above everything else
           minWidth: '160px',
           fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -96,8 +96,8 @@ class TextFormatMenu extends Component {
           className="menu-header"
           style={{
             padding: '8px 12px',
-            backgroundColor: '#f5f5f5',
-            borderBottom: '1px solid #ddd',
+            backgroundColor: 'var(--fall-light-taupe)',
+            borderBottom: '1px solid var(--fall-taupe)',
             borderRadius: '6px 6px 0 0',
             cursor: 'move',
             display: 'flex',
@@ -139,7 +139,7 @@ class TextFormatMenu extends Component {
                 padding: '6px 8px',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                backgroundColor: showColorPicker ? '#f0f0f0' : 'transparent'
+                backgroundColor: showColorPicker ? 'var(--fall-sage)' : 'transparent'
               }}
               onClick={this.toggleColorPicker}
             >
@@ -149,10 +149,10 @@ class TextFormatMenu extends Component {
                   width: '20px',
                   height: '20px',
                   borderRadius: '3px',
-                  border: '1px solid #ccc',
+                  border: '1px solid var(--fall-light-taupe)',
                   backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
                   background: backgroundColor === 'transparent' 
-                    ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)'
+                    ? 'linear-gradient(45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(-45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fall-light-taupe) 75%), linear-gradient(-45deg, transparent 75%, var(--fall-light-taupe) 75%)'
                     : backgroundColor,
                   backgroundSize: backgroundColor === 'transparent' ? '8px 8px' : 'auto',
                   backgroundPosition: backgroundColor === 'transparent' ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'auto'
@@ -164,7 +164,7 @@ class TextFormatMenu extends Component {
               <div style={{ 
                 marginTop: '8px', 
                 padding: '8px',
-                backgroundColor: '#f9f9f9',
+                backgroundColor: 'var(--fall-sage)',
                 borderRadius: '4px'
               }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -175,9 +175,9 @@ class TextFormatMenu extends Component {
                       width: '30px',
                       height: '30px',
                       borderRadius: '4px',
-                      border: backgroundColor === 'transparent' ? '2px solid #007bff' : '1px solid #ccc',
+                      border: backgroundColor === 'transparent' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
                       cursor: 'pointer',
-                      background: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                      background: 'linear-gradient(45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(-45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fall-light-taupe) 75%), linear-gradient(-45deg, transparent 75%, var(--fall-light-taupe) 75%)',
                       backgroundSize: '8px 8px',
                       backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
                       position: 'relative'
@@ -191,7 +191,7 @@ class TextFormatMenu extends Component {
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
                         fontSize: '16px',
-                        color: '#007bff',
+                        color: 'var(--fall-burnt-orange)',
                         fontWeight: 'bold'
                       }}>
                         ✓
@@ -206,7 +206,7 @@ class TextFormatMenu extends Component {
                       width: '30px',
                       height: '30px',
                       borderRadius: '4px',
-                      border: backgroundColor === 'white' ? '2px solid #007bff' : '1px solid #ccc',
+                      border: backgroundColor === 'white' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
                       backgroundColor: 'white',
                       cursor: 'pointer',
                       display: 'flex',
@@ -216,7 +216,7 @@ class TextFormatMenu extends Component {
                     title="White"
                   >
                     {backgroundColor === 'white' && (
-                      <span style={{ color: '#007bff', fontWeight: 'bold' }}>✓</span>
+                      <span style={{ color: 'var(--fall-burnt-orange)', fontWeight: 'bold' }}>✓</span>
                     )}
                   </div>
                 </div>

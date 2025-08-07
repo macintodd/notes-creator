@@ -1,4 +1,17 @@
-/* TableTab.css */
+/* TableTab.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
+
 .table-tab {
   padding: 10px;
 }
@@ -10,6 +23,7 @@
 .label {
   font-weight: bold;
   margin-bottom: 6px;
+  color: var(--fall-charcoal);
 }
 
 .column-buttons,
@@ -22,40 +36,53 @@
 .column-buttons button,
 .size-buttons button {
   padding: 6px 12px;
-  border: 1px solid #aaa;
+  border: 1px solid var(--fall-taupe);
   border-radius: 6px;
-  background-color: #f8f8f8;
+  background-color: var(--fall-cream);
   cursor: pointer;
+  color: var(--fall-charcoal);
+  transition: all 0.2s ease;
+}
+
+.column-buttons button:hover,
+.size-buttons button:hover {
+  background-color: var(--fall-light-taupe);
 }
 
 button.active {
-  background-color: #4a90e2;
+  background-color: var(--fall-burnt-orange);
   color: white;
-  border-color: #357abd;
+  border-color: var(--fall-burgundy);
 }
 
 .table-preview-wrapper {
   position: relative;
-  border: 1px dashed #999;
+  border: 1px dashed var(--fall-taupe);
   margin-top: 12px;
   padding: 6px;
   cursor: pointer;
   user-select: none;
-  background-color: #fafafa;
+  background-color: var(--fall-sage);
+  transition: all 0.2s ease;
+}
+
+.table-preview-wrapper:hover {
+  border-color: var(--fall-burnt-orange);
+  background-color: var(--fall-light-taupe);
 }
 
 .table-preview {
   display: grid;
   width: 100%;
   height: 100%;
-  background-color: white;
-  border: 1px solid #ccc;
+  background-color: var(--fall-cream);
+  border: 1px solid var(--fall-taupe);
 }
 
 .preview-cell {
-  border-right: 1px solid #aaa;
-  border-bottom: 1px solid #aaa;
-  background-color: #f0f0f0;
+  border-right: 1px solid var(--fall-taupe);
+  border-bottom: 1px solid var(--fall-taupe);
+  background-color: var(--fall-light-taupe);
 }
 
 .preview-cell:last-child {
@@ -68,11 +95,11 @@ button.active {
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 14px;
-  color: #666;
+  color: var(--fall-charcoal);
   pointer-events: none;
 }
 .preview-cell {
-  border: 1px solid #ccc;
-  background: #f9f9f9;
+  border: 1px solid var(--fall-taupe);
+  background: var(--fall-light-taupe);
   height: 100%;
 }

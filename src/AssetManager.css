@@ -1,8 +1,20 @@
-/* AssetManager.css */
+/* AssetManager.css - Fall Color Palette */
+
+/* Fall Color Palette Variables */
+:root {
+  --fall-cream: #faf7f2;          /* Warm cream/off-white for worksheet */
+  --fall-sage: #e8ede8;           /* Soft sage green for app background */
+  --fall-burnt-orange: #d2691e;   /* Burnt orange for primary actions */
+  --fall-burgundy: #8b4513;       /* Deep burgundy for secondary actions */
+  --fall-amber: #daa520;          /* Golden amber for highlights */
+  --fall-charcoal: #3e2723;       /* Charcoal brown for text */
+  --fall-taupe: #a0938b;          /* Muted taupe for borders */
+  --fall-light-taupe: #d4c7c0;    /* Lighter taupe for subtle elements */
+}
 
 .asset-manager {
   position: fixed;
-  top: 100px;
+  top: 20px;
   left: 952px; /* 116px (app padding) + 816px (canvas width) + 20px (gap) = 952px */
   width: 250px;
   height: 750px; /* Increased from 500px to 750px (1.5x taller) */
@@ -10,10 +22,10 @@
   min-height: 300px; /* Minimum height */
   max-width: 500px; /* Maximum width to prevent UI issues */
   max-height: 90vh; /* Maximum height relative to viewport */
-  background-color: #fff;
-  border: 1px solid #ccc;
+  background-color: var(--fall-cream);
+  border: 1px solid var(--fall-taupe);
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(62, 39, 35, 0.15);
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -27,8 +39,8 @@
   flex-wrap: wrap;
   padding: 6px;
   gap: 6px;
-  background-color: #f8f8f8;
-  border-bottom: 1px solid #ddd;
+  background-color: var(--fall-sage);
+  border-bottom: 1px solid var(--fall-taupe);
   justify-content: flex-start;
 }
 
@@ -41,8 +53,9 @@
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.3s, color 0.3s;
-  background-color: #eee;
+  background-color: var(--fall-light-taupe);
   border: none;
+  color: var(--fall-charcoal);
 }
 
 .asset-tab:nth-child(3n+1) {
@@ -50,13 +63,14 @@
 }
 
 .asset-tab.active {
-  background-color: #4a90e2;
+  background-color: var(--fall-burnt-orange);
   color: white;
   font-weight: bold;
 }
 
 .asset-tab:hover {
-  background-color: #ddd;
+  background-color: var(--fall-amber);
+  color: var(--fall-charcoal);
 }
 
 .asset-content {
@@ -64,7 +78,7 @@
   padding: 12px;
   overflow-y: auto;
   font-size: 14px;
-  color: #333;
+  color: var(--fall-charcoal);
 }
 
 /* Text presets specific styles */
@@ -78,8 +92,8 @@
 
 .text-preset-box {
   padding: 12px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: var(--fall-light-taupe);
+  border: 1px solid var(--fall-taupe);
   border-radius: 4px;
   cursor: grab;
   user-select: none;
@@ -92,8 +106,8 @@
 }
 
 .text-preset-box:hover {
-  background: #e5e5e5;
-  border-color: #bbb;
+  background: var(--fall-amber);
+  border-color: var(--fall-burnt-orange);
 }
 
 .text-preset-box:active {
@@ -102,14 +116,14 @@
 
 .text-preset-label {
   font-size: 10px;
-  color: #666;
+  color: var(--fall-taupe);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
 
 .text-preset-preview {
-  color: #333;
+  color: var(--fall-charcoal);
   text-align: center;
 }
 
@@ -149,14 +163,16 @@
   width: 100%;
   min-height: 100px;
   padding: 0.5rem;
-  border: 1px dashed #ccc;
+  border: 1px dashed var(--fall-taupe);
   border-radius: 4px;
   font-family: monospace;
+  background-color: var(--fall-cream);
+  color: var(--fall-charcoal);
 }
 
 .problem-instructions {
   text-align: center;
-  color: #666;
+  color: var(--fall-taupe);
   font-style: italic;
   margin-top: 4px;
 }
@@ -164,18 +180,20 @@
 .set-selector {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--fall-taupe);
   border-radius: 4px;
   margin-top: 8px;
+  background-color: var(--fall-cream);
+  color: var(--fall-charcoal);
 }
 
 .selection-info {
-  background: #e3f2fd;
-  border: 1px solid #2196f3;
+  background: var(--fall-sage);
+  border: 1px solid var(--fall-burnt-orange);
   border-radius: 4px;
   padding: 6px 8px;
   font-size: 12px;
-  color: #1976d2;
+  color: var(--fall-burgundy);
   text-align: center;
   margin-top: 8px;
 }
@@ -190,8 +208,8 @@
 
 .problem-item {
   padding: 8px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: var(--fall-light-taupe);
+  border: 1px solid var(--fall-taupe);
   border-radius: 4px;
   cursor: grab;
   user-select: none;
@@ -199,7 +217,7 @@
 }
 
 .problem-item:hover {
-  background: #e5e5e5;
+  background: var(--fall-amber);
 }
 
 .problem-item:active {
@@ -207,33 +225,35 @@
 }
 
 .problem-item:hover:not(.selected) {
-  background: #e5e5e5;
+  background: var(--fall-amber);
 }
 
 .problem-item.selected {
-  background: #d4edda;
-  border-color: #28a745;
-  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+  background: var(--fall-burnt-orange);
+  border-color: var(--fall-burgundy);
+  color: var(--fall-cream);
+  box-shadow: 0 0 0 2px rgba(210, 105, 30, 0.3);
 }
 
 .problem-item.selected:hover {
-  background: #c3e6cb;
+  background: var(--fall-burgundy);
 }
 
 .problem-item.used {
-  background: #f8d7da;
-  border-color: #dc3545;
-  color: #721c24;
+  background: #d4b8b8;
+  border-color: var(--fall-burgundy);
+  color: var(--fall-charcoal);
 }
 
 .problem-item.used:hover {
-  background: #f1b0b7;
+  background: #c9a8a8;
 }
 
 .problem-item.used.selected {
-  background: #f5c6cb;
-  border-color: #dc3545;
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+  background: var(--fall-burgundy);
+  border-color: #8b4513;
+  color: var(--fall-cream);
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.3);
 }
 
 /* Hide text presets in other tabs */
@@ -243,14 +263,14 @@
 
 /* Drag preview styling */
 .problem-drag-preview {
-  background: white !important;
-  border: 2px solid #4a90e2 !important;
+  background: var(--fall-cream) !important;
+  border: 2px solid var(--fall-amber) !important;
   border-radius: 8px !important;
   padding: 8px 12px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 4px 12px rgba(62, 39, 35, 0.3) !important;
   font-size: 14px !important;
   font-weight: bold !important;
-  color: #4a90e2 !important;
+  color: var(--fall-charcoal) !important;
   white-space: nowrap !important;
   pointer-events: none !important;
 }
@@ -258,8 +278,8 @@
 /* Snap to Grid Toggle Section */
 .snap-toggle-section {
   padding: 8px 12px;
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ddd;
+  background-color: var(--fall-sage);
+  border-bottom: 1px solid var(--fall-light-taupe);
   display: flex;
   justify-content: center;
 }
@@ -296,8 +316,8 @@
 .file-section h4 {
   margin: 0 0 4px 0;
   font-size: 14px;
-  color: #333;
-  border-bottom: 1px solid #eee;
+  color: var(--fall-charcoal);
+  border-bottom: 1px solid var(--fall-light-taupe);
   padding-bottom: 4px;
 }
 
@@ -310,61 +330,66 @@
 .input-group label {
   font-size: 12px;
   font-weight: bold;
-  color: #555;
+  color: var(--fall-taupe);
 }
 
 .input-group input,
 .input-group select {
   padding: 6px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--fall-taupe);
   border-radius: 4px;
   font-size: 14px;
+  background-color: var(--fall-cream);
+  color: var(--fall-charcoal);
 }
 
 .login-button {
   padding: 10px 16px;
-  background-color: #4285f4;
+  background-color: var(--fall-burnt-orange);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
+  transition: background-color 0.2s ease;
 }
 
 .login-button:hover {
-  background-color: #357ae8;
+  background-color: var(--fall-burgundy);
 }
 
 .user-info {
   padding: 8px 12px;
-  background-color: #e8f5e8;
+  background-color: var(--fall-sage);
   border-radius: 4px;
   font-size: 14px;
-  color: #2e7d32;
+  color: var(--fall-charcoal);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border: 1px solid var(--fall-taupe);
 }
 
 .logout-button {
   padding: 4px 8px;
-  background-color: #f44336;
+  background-color: var(--fall-burgundy);
   color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
   margin-left: 8px;
+  transition: background-color 0.2s ease;
 }
 
 .logout-button:hover {
-  background-color: #d32f2f;
+  background-color: #6b3410;
 }
 
 .save-button {
   padding: 10px 16px;
-  background-color: #4a90e2;
+  background-color: var(--fall-burnt-orange);
   color: white;
   border: none;
   border-radius: 4px;
@@ -372,24 +397,26 @@
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 8px;
+  transition: background-color 0.2s ease;
 }
 
 .save-button:hover {
-  background-color: #357abd;
+  background-color: var(--fall-burgundy);
 }
 
 .save-button:disabled {
-  background-color: #ccc;
+  background-color: var(--fall-taupe);
   cursor: not-allowed;
 }
 
 .save-button.saved {
-  background-color: #4caf50;
+  background-color: var(--fall-amber);
+  color: var(--fall-charcoal);
 }
 
 .export-pdf-button {
   padding: 10px 16px;
-  background-color: #ff6b35;
+  background-color: var(--fall-burgundy);
   color: white;
   border: none;
   border-radius: 4px;
@@ -397,24 +424,26 @@
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 8px;
+  transition: background-color 0.2s ease;
 }
 
 .export-pdf-button:hover {
-  background-color: #e55a2b;
+  background-color: #6b3410;
 }
 
 .export-pdf-button:disabled {
-  background-color: #ccc;
+  background-color: var(--fall-taupe);
   cursor: not-allowed;
 }
 
 .export-pdf-button.exporting {
-  background-color: #ff9500;
+  background-color: var(--fall-amber);
+  color: var(--fall-charcoal);
 }
 
 .file-section button:not(.save-button):not(.export-pdf-button) {
   padding: 8px 16px;
-  background-color: #666;
+  background-color: var(--fall-taupe);
   color: white;
   border: none;
   border-radius: 4px;
@@ -423,11 +452,11 @@
 }
 
 .file-section button:not(.save-button):not(.export-pdf-button):hover {
-  background-color: #555;
+  background-color: var(--fall-charcoal);
 }
 
 .file-section button:disabled {
-  background-color: #ccc;
+  background-color: var(--fall-taupe);
   cursor: not-allowed;
 }
 
@@ -439,14 +468,14 @@
   right: 0;
   width: 20px;
   height: 20px;
-  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #ccc 30%, #ccc 35%, transparent 35%, transparent 65%, #ccc 65%, #ccc 70%, transparent 70%);
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fall-light-taupe) 30%, var(--fall-light-taupe) 35%, transparent 35%, transparent 65%, var(--fall-light-taupe) 65%, var(--fall-light-taupe) 70%, transparent 70%);
   cursor: nw-resize;
   border-bottom-right-radius: 12px;
 }
 
 /* Ensure resize handle is visible on hover */
 .asset-manager:hover::after {
-  background: linear-gradient(-45deg, transparent 0%, transparent 30%, #999 30%, #999 35%, transparent 35%, transparent 65%, #999 65%, #999 70%, transparent 70%);
+  background: linear-gradient(-45deg, transparent 0%, transparent 30%, var(--fall-taupe) 30%, var(--fall-taupe) 35%, transparent 35%, transparent 65%, var(--fall-taupe) 65%, var(--fall-taupe) 70%, transparent 70%);
 }
 
 /* Responsive tab layout based on container width */
@@ -476,29 +505,29 @@
 .load-problems-section {
   margin-top: 15px;
   padding-top: 15px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--fall-light-taupe);
   text-align: center;
 }
 
 .load-problems-button {
   padding: 10px 20px;
-  background-color: #4a90e2;
+  background-color: var(--fall-burnt-orange);
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
   width: 100%;
   max-width: 200px;
 }
 
 .load-problems-button:hover {
-  background-color: #357abd;
+  background-color: var(--fall-burgundy);
 }
 
 .load-problems-button:active {
-  background-color: #2e6ba8;
+  background-color: var(--fall-charcoal);
   transform: translateY(1px);
 }

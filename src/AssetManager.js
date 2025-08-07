@@ -252,14 +252,14 @@ const AssetManager = forwardRef(({
       position: absolute;
       top: -1000px;
       left: -1000px;
-      background: white;
-      border: 2px solid #4a90e2;
+      background: var(--fall-cream);
+      border: 2px solid var(--fall-burnt-orange);
       border-radius: 8px;
       padding: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(62, 39, 35, 0.3);
       font-size: 14px;
       font-weight: bold;
-      color: #4a90e2;
+      color: var(--fall-burnt-orange);
       z-index: 10000;
       pointer-events: none;
     `;

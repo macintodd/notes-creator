@@ -472,15 +472,15 @@ function AppContent() {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
+        background: var(--fall-cream);
+        border: 1px solid var(--fall-taupe);
         border-radius: 6px;
         padding: 15px 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(62, 39, 35, 0.15);
         z-index: 1100;
         font-family: system-ui, -apple-system, sans-serif;
         font-size: 14px;
-        color: #495057;
+        color: var(--fall-charcoal);
         max-width: 300px;
       `;
       notification.innerHTML = `
@@ -512,20 +512,21 @@ function AppContent() {
         zIndex: 1000
       }}>
         <div className="dialog" style={{
-          backgroundColor: 'white',
+          backgroundColor: 'var(--fall-cream)',
           padding: '20px',
           borderRadius: '8px',
           minWidth: '450px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 4px 20px rgba(62, 39, 35, 0.3)',
+          border: '1px solid var(--fall-taupe)'
         }}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>File Already Exists</h3>
-          <p style={{ margin: '0 0 10px 0' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: 'var(--fall-charcoal)' }}>File Already Exists</h3>
+          <p style={{ margin: '0 0 10px 0', color: 'var(--fall-charcoal)' }}>
             A worksheet named <strong>"{pendingSave.title}"</strong> already exists in your Google Drive.
           </p>
-          <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>
+          <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: 'var(--fall-taupe)' }}>
             Last modified: {new Date(pendingSave.existingFile.modifiedTime).toLocaleString()}
           </p>
-          <p style={{ margin: '0 0 20px 0', fontWeight: '500' }}>What would you like to do?</p>
+          <p style={{ margin: '0 0 20px 0', fontWeight: '500', color: 'var(--fall-charcoal)' }}>What would you like to do?</p>
           
           <div className="dialog-buttons" style={{
             display: 'flex',
@@ -537,7 +538,7 @@ function AppContent() {
               onClick={handleOverwriteExisting}
               style={{
                 padding: '10px 16px',
-                backgroundColor: '#dc3545',
+                backgroundColor: 'var(--fall-burgundy)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
@@ -551,7 +552,7 @@ function AppContent() {
               onClick={handleSaveAsNew}
               style={{
                 padding: '10px 16px',
-                backgroundColor: '#28a745',
+                backgroundColor: 'var(--fall-burnt-orange)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
@@ -565,7 +566,7 @@ function AppContent() {
               onClick={handleCancel}
               style={{
                 padding: '10px 16px',
-                backgroundColor: '#6c757d',
+                backgroundColor: 'var(--fall-taupe)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
@@ -580,7 +581,7 @@ function AppContent() {
           <p style={{ 
             margin: '15px 0 0 0', 
             fontSize: '12px', 
-            color: '#666', 
+            color: 'var(--fall-taupe)', 
             textAlign: 'center',
             fontStyle: 'italic'
           }}>
@@ -694,19 +695,39 @@ function AppContent() {
         .pdf-export-clone .page-break::before { display: none !important; }
         .pdf-export-clone .border-menu { display: none !important; }
         
-        /* Clean up worksheet canvas */
+        /* Clean up worksheet canvas - Force white background */
         .pdf-export-clone .worksheet-canvas { 
           background-image: none !important; 
           border: none !important; 
           box-shadow: none !important; 
-          background-color: white !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+        }
+        
+        /* Force worksheet and main container backgrounds to pure white */
+        .pdf-export-clone,
+        .pdf-export-clone .app-content,
+        .pdf-export-clone .worksheet-canvas-container {
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+        }
+        
+        /* Headers and footers - force black text on white */
+        .pdf-export-clone .worksheet-header,
+        .pdf-export-clone .worksheet-footer {
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Remove borders from text boxes only (not tables) */
         .pdf-export-clone .text-box { 
           border: none !important; 
           box-shadow: none !important; 
-          outline: none !important; 
+          outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Target text boxes more aggressively - override inline styles */
@@ -714,37 +735,54 @@ function AppContent() {
           border: none !important;
           box-shadow: none !important;
           outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Additional targeting for any div that might be a text box */
         .pdf-export-clone div[contenteditable] {
           border: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Target divs with cursor move (text boxes when not editing) */
-        .pdf-export-clone div[style*="cursor: move"] {
+        .pdf-export-clone div[style*="cursor: move"]:not(.table-cell) {
           border: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Target divs with cursor text (text boxes when editing) */
-        .pdf-export-clone div[style*="cursor: text"] {
+        .pdf-export-clone div[style*="cursor: text"]:not(.table-cell) {
           border: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
         /* Remove borders from react-rnd wrappers for text boxes only */
         .pdf-export-clone .react-rnd:not(.table-wrapper) { 
           border: none !important; 
           box-shadow: none !important; 
-          outline: none !important; 
+          outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
         }
         
         .pdf-export-clone .react-rnd:not(.table-wrapper) > div { 
           border: none !important; 
           box-shadow: none !important; 
-          outline: none !important; 
+          outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
         
-        /* Keep table cell borders but remove selection styling */
+        /* Keep table cell borders but remove selection styling - force black borders */
         .pdf-export-clone .table-block.selected { 
           box-shadow: none !important; 
           outline: none !important;
@@ -753,15 +791,57 @@ function AppContent() {
         /* Remove only selection/focus borders, keep structural borders */
         .pdf-export-clone .table-block { 
           box-shadow: none !important; 
-          outline: none !important; 
+          outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
         }
         
-        /* Preserve table cell borders (they use inline styles) but remove any CSS borders */
+        /* Preserve table cell borders and force white background with black borders */
         .pdf-export-clone .table-cell {
           box-shadow: none !important;
           outline: none !important;
-          background: white !important;
-          background-color: white !important;
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          color: #000000 !important;
+        }
+        
+        /* Force table wrapper and structure to maintain borders */
+        .pdf-export-clone .table-wrapper {
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+        }
+        
+        /* Force graphs to be black and white */
+        .pdf-export-clone canvas {
+          filter: grayscale(100%) contrast(150%) !important;
+        }
+        
+        .pdf-export-clone img {
+          filter: grayscale(100%) contrast(150%) !important;
+        }
+        
+        /* Force any SVG elements to black */
+        .pdf-export-clone svg,
+        .pdf-export-clone svg * {
+          fill: #000000 !important;
+          stroke: #000000 !important;
+          background-color: #ffffff !important;
+        }
+        
+        /* Force LaTeX equations to be black */
+        .pdf-export-clone .katex,
+        .pdf-export-clone .katex * {
+          color: #000000 !important;
+          background-color: transparent !important;
+          background: transparent !important;
+        }
+        
+        /* Ensure problem blocks are black and white */
+        .pdf-export-clone .worksheet-problem {
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
+          border-color: #000000 !important;
         }
         
         /* Remove borders from text boxes and UI elements, but preserve table structure */
@@ -774,6 +854,9 @@ function AppContent() {
           border: none !important;
           box-shadow: none !important;
           outline: none !important;
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+          color: #000000 !important;
         }
       `;
       document.head.appendChild(style);
@@ -790,14 +873,30 @@ function AppContent() {
       document.body.appendChild(clonedElement);
 
       try {
-        // Capture the cloned element as canvas
+        // More targeted DOM manipulation - only fix colors, don't break structure
+        const worksheetCanvas = clonedElement.querySelector('.worksheet-canvas');
+        if (worksheetCanvas) {
+          worksheetCanvas.style.setProperty('background-color', '#ffffff', 'important');
+          worksheetCanvas.style.setProperty('background', '#ffffff', 'important');
+        }
+        
+        // Fix text elements without breaking table structure
+        const textElements = clonedElement.querySelectorAll('.text-box, .react-rnd:not(.table-wrapper)');
+        textElements.forEach(el => {
+          el.style.setProperty('background-color', '#ffffff', 'important');
+          el.style.setProperty('color', '#000000', 'important');
+        });
+
+        // Capture the cloned element as canvas with pure white background
         const canvas = await html2canvas(clonedElement, {
           scale: 2, // Higher resolution
           useCORS: true,
           allowTaint: true,
-          backgroundColor: '#ffffff',
+          backgroundColor: '#ffffff', // Pure white background
           width: 816, // Match worksheet width
           height: 2112, // Match worksheet height (two pages)
+          logging: false, // Reduce console noise
+          removeContainer: true, // Clean up after capture
         });
 
         // Create PDF with letter size dimensions
@@ -834,10 +933,16 @@ function AppContent() {
         const ctx1 = pageCanvas1.getContext('2d');
         const ctx2 = pageCanvas2.getContext('2d');
         
-        // Draw first page (top half of original canvas)
+        // Fill both page canvases with pure white first
+        ctx1.fillStyle = '#ffffff';
+        ctx1.fillRect(0, 0, pageCanvas1.width, pageCanvas1.height);
+        ctx2.fillStyle = '#ffffff';
+        ctx2.fillRect(0, 0, pageCanvas2.width, pageCanvas2.height);
+        
+        // Draw first page (top half of canvas)
         ctx1.drawImage(canvas, 0, 0, canvas.width, canvas.height / 2, 0, 0, pageCanvas1.width, pageCanvas1.height);
         
-        // Draw second page (bottom half of original canvas)
+        // Draw second page (bottom half of canvas)
         ctx2.drawImage(canvas, 0, canvas.height / 2, canvas.width, canvas.height / 2, 0, 0, pageCanvas2.width, pageCanvas2.height);
         
         // Add pages to PDF
@@ -912,17 +1017,17 @@ function AppContent() {
       `;
       
       dialog.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-          <h3 style="margin-bottom: 20px;">Save PDF</h3>
-          <p style="margin-bottom: 30px;">Choose how to save your worksheet PDF:</p>
-          <button id="pdf-download" style="margin: 0 10px; padding: 12px 24px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+        <div style="background: var(--fall-cream); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 20px rgba(62, 39, 35, 0.3); border: 1px solid var(--fall-taupe);">
+          <h3 style="margin-bottom: 20px; color: var(--fall-charcoal);">Save PDF</h3>
+          <p style="margin-bottom: 30px; color: var(--fall-charcoal);">Choose how to save your worksheet PDF:</p>
+          <button id="pdf-download" style="margin: 0 10px; padding: 12px 24px; background: var(--fall-burnt-orange); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500;">
             Download to Computer
           </button>
-          <button id="pdf-drive" style="margin: 0 10px; padding: 12px 24px; background: #ff6b35; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+          <button id="pdf-drive" style="margin: 0 10px; padding: 12px 24px; background: var(--fall-burgundy); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500;">
             Save to Google Drive
           </button>
           <br><br>
-          <button id="pdf-cancel" style="margin-top: 10px; padding: 8px 16px; background: #ccc; color: #333; border: none; border-radius: 5px; cursor: pointer;">
+          <button id="pdf-cancel" style="margin-top: 10px; padding: 8px 16px; background: var(--fall-taupe); color: white; border: none; border-radius: 5px; cursor: pointer;">
             Cancel
           </button>
         </div>
