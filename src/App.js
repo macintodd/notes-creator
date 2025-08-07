@@ -12,7 +12,13 @@ import './ModePicker.css';
 import './WorksheetCanvas.css';
 import './AssetManager.css';
 
-const CLIENT_ID = '';
+const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
+// Warn if CLIENT_ID is not configured
+if (!CLIENT_ID) {
+  console.warn('⚠️ REACT_APP_GOOGLE_CLIENT_ID is not set. Google authentication will not work.');
+  console.warn('💡 Create a .env file with REACT_APP_GOOGLE_CLIENT_ID=your_client_id_here');
+}
 
 // localStorage keys for persistence
 const STORAGE_KEYS = {
