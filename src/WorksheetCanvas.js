@@ -1461,6 +1461,7 @@ export default class WorksheetCanvas extends Component {
                 fontStyle={el.fontStyle}
                 hasStroke={el.hasStroke}
                 isSelected={!!el.isSelected}
+                textAlign={el.textAlign || 'left'}
                 onSelect={(id, event) => this.handleSelectElement(id, event)}
                 onDeselect={this.handleDeselectAll}
                 onUpdate={this.handleUpdateElement}

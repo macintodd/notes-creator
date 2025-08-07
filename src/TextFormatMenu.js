@@ -2,59 +2,6 @@
 import React, { Component } from 'react';
 
 class TextFormatMenu extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      position: { x: props.x || 0, y: props.y || 0 },
-      dragStart: null,
-      showColorPicker: false
-    };
-    this.menuRef = React.createRef();
-  }
-
-  componentDidMount() {
-    document.addEventListener('mousemove', this.handleGlobalMouseMove);
-    document.addEventListener('mouseup', this.handleGlobalMouseUp);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('mousemove', this.handleGlobalMouseMove);
-    document.removeEventListener('mouseup', this.handleGlobalMouseUp);
-  }
-
-  handleMouseDown = (e) => {
-    if (e.target.classList.contains('menu-header')) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.setState({
-        dragStart: {
-          x: e.clientX,
-          y: e.clientY,
-          originX: this.state.position.x,
-          originY: this.state.position.y,
-        },
-      });
-    }
-  };
-
-  handleGlobalMouseMove = (e) => {
-    const { dragStart } = this.state;
-    if (dragStart) {
-      e.preventDefault();
-      const dx = e.clientX - dragStart.x;
-      const dy = e.clientY - dragStart.y;
-      const newPos = {
-        x: dragStart.originX + dx,
-        y: dragStart.originY + dy,
-      };
-      this.setState({ position: newPos });
-    }
-  };
-
-  handleGlobalMouseUp = () => {
-    this.setState({ dragStart: null });
-  };
-
   handleBackgroundColorChange = (color) => {
     const { onBackgroundColorChange } = this.props;
     if (onBackgroundColorChange) {
@@ -62,26 +9,42 @@ class TextFormatMenu extends Component {
     }
   };
 
-  handleStrokeToggle = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  toggleColorPicker = () => {
+    this.setState((prevState) => ({ showColorPicker: !prevState.showColorPicker }));
+  };
+
+  handleStrokeToggle = () => {
     const { onStrokeToggle } = this.props;
     if (onStrokeToggle) {
       onStrokeToggle();
     }
   };
-
-  toggleColorPicker = () => {
-    this.setState(prevState => ({
-      showColorPicker: !prevState.showColorPicker
-    }));
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      position: { x: props.x || 0, y: props.y || 0 },
+      showColorPicker: false,
+      centerText: !!props.textAlign && props.textAlign === 'center',
+      fontSize: typeof props.fontSize === 'number' ? props.fontSize : (parseInt(props.fontSize, 10) || 14)
+    };
+    this.menuRef = React.createRef();
+  }
+  handleFontSizeChange = (delta) => {
+    const { onFontSizeChange } = this.props;
+    this.setState(prevState => {
+      let newFontSize = (prevState.fontSize || 14) + delta;
+      if (newFontSize < 6) newFontSize = 6;
+      if (newFontSize > 200) newFontSize = 200;
+      if (onFontSizeChange) {
+        onFontSizeChange(newFontSize);
+      }
+      return { fontSize: newFontSize };
+    });
+  }
 
   render() {
-    const { position, showColorPicker } = this.state;
+    const { position, showColorPicker, centerText, fontSize } = this.state;
     const { onClose, backgroundColor = 'transparent', hasStroke = false } = this.props;
-    
-    console.log('TextFormatMenu render - hasStroke:', hasStroke); // Debug log
 
     return (
       <div
@@ -150,7 +113,7 @@ class TextFormatMenu extends Component {
                 padding: '6px 8px',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                backgroundColor: showColorPicker ? 'var(--fall-sage)' : 'transparent'
+                backgroundColor: this.state.showColorPicker ? 'var(--fall-sage)' : 'transparent'
               }}
               onClick={this.toggleColorPicker}
             >
@@ -162,7 +125,7 @@ class TextFormatMenu extends Component {
                   borderRadius: '3px',
                   border: '1px solid var(--fall-light-taupe)',
                   backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
-                  background: backgroundColor === 'transparent' 
+                  background: backgroundColor === 'transparent'
                     ? 'linear-gradient(45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(-45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fall-light-taupe) 75%), linear-gradient(-45deg, transparent 75%, var(--fall-light-taupe) 75%)'
                     : backgroundColor,
                   backgroundSize: backgroundColor === 'transparent' ? '8px 8px' : 'auto',
@@ -170,10 +133,9 @@ class TextFormatMenu extends Component {
                 }}
               />
             </div>
-            
-            {showColorPicker && (
-              <div style={{ 
-                marginTop: '8px', 
+            {this.state.showColorPicker && (
+              <div style={{
+                marginTop: '8px',
                 padding: '8px',
                 backgroundColor: 'var(--fall-sage)',
                 borderRadius: '4px'
@@ -209,7 +171,6 @@ class TextFormatMenu extends Component {
                       </div>
                     )}
                   </div>
-                  
                   {/* White option */}
                   <div
                     onClick={() => this.handleBackgroundColorChange('white')}
@@ -279,6 +240,28 @@ class TextFormatMenu extends Component {
               </div>
             </div>
           </div>
+          {/* Font Size Section */}
+          <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
+            <span>Font Size</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+                onClick={() => this.handleFontSizeChange(-1)}
+                title="Decrease font size"
+              >
+                –
+              </button>
+              <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{fontSize}</span>
+              <button
+                style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+                onClick={() => this.handleFontSizeChange(1)}
+                title="Increase font size"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          {/* Other menu content (background color, stroke, center, etc.) would go here */}
         </div>
       </div>
     );

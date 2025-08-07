@@ -436,12 +436,13 @@ class TextBox extends Component {
               : isSelected
                 ? isEditing ? '2px solid var(--fall-amber)' : '2px solid var(--fall-burnt-orange)'
                 : '1px solid var(--fall-light-taupe)',
-            padding: 4,
+            padding: 8,
             backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
             userSelect: isEditing ? 'text' : 'none',
             cursor: isEditing ? 'text' : 'move',
             overflow: 'hidden',
             zIndex: isSelected ? 100 : 10, // Normal: 10 (above tables), Selected: 100 (top layer)
+            textAlign: this.props.textAlign || 'left',
             ...textStyles
           }}
           onMouseDown={isEditing ? undefined : this.props.onMouseDown}
@@ -504,8 +505,20 @@ class TextBox extends Component {
             y={position.y}
             backgroundColor={backgroundColor}
             hasStroke={hasStroke}
+            textAlign={this.props.textAlign || 'left'}
+            fontSize={this.props.fontSize}
             onBackgroundColorChange={this.handleBackgroundColorChange}
             onStrokeToggle={this.handleStrokeToggle}
+            onTextAlignChange={align => {
+              if (this.props.onUpdate) {
+                this.props.onUpdate(this.props.id, { textAlign: align });
+              }
+            }}
+            onFontSizeChange={newFontSize => {
+              if (this.props.onUpdate) {
+                this.props.onUpdate(this.props.id, { fontSize: newFontSize });
+              }
+            }}
             onClose={this.handleFormatMenuClose}
           />
         )}

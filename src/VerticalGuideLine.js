@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import './VerticalGuideLine.css';
 
 export default function VerticalGuideLine({ 
-  initialX = 200, // 1.5 inches from left (1.5 * 72 = 108px)
+  initialX = 150, // 1.5 inches from left (1.5 * 72 = 108px)
   onPositionChange,
   canvasHeight = 1584 // Two page height
 }) {
-  const [x, setX] = useState(147);
+  const [x, setX] = useState(150);
   const [isLocked, setIsLocked] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [isSelected, setIsSelected] = useState(false);
