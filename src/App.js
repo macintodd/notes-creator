@@ -725,8 +725,6 @@ function AppContent() {
           border: none !important; 
           box-shadow: none !important; 
           outline: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
@@ -735,32 +733,24 @@ function AppContent() {
           border: none !important;
           box-shadow: none !important;
           outline: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
         /* Additional targeting for any div that might be a text box */
         .pdf-export-clone div[contenteditable] {
           border: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
         /* Target divs with cursor move (text boxes when not editing) */
         .pdf-export-clone div[style*="cursor: move"]:not(.table-cell) {
           border: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
         /* Target divs with cursor text (text boxes when editing) */
         .pdf-export-clone div[style*="cursor: text"]:not(.table-cell) {
           border: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
@@ -769,16 +759,12 @@ function AppContent() {
           border: none !important; 
           box-shadow: none !important; 
           outline: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
         }
         
         .pdf-export-clone .react-rnd:not(.table-wrapper) > div { 
           border: none !important; 
           box-shadow: none !important; 
           outline: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
           color: #000000 !important;
         }
         
@@ -843,21 +829,6 @@ function AppContent() {
           color: #000000 !important;
           border-color: #000000 !important;
         }
-        
-        /* Remove borders from text boxes and UI elements, but preserve table structure */
-        .pdf-export-clone .text-box,
-        .pdf-export-clone .react-rnd:not(.table-wrapper),
-        .pdf-export-clone .react-rnd:not(.table-wrapper) > div,
-        .pdf-export-clone div[contenteditable],
-        .pdf-export-clone div[style*="cursor: move"]:not(.table-cell),
-        .pdf-export-clone div[style*="cursor: text"]:not(.table-cell) {
-          border: none !important;
-          box-shadow: none !important;
-          outline: none !important;
-          background-color: #ffffff !important;
-          background: #ffffff !important;
-          color: #000000 !important;
-        }
       `;
       document.head.appendChild(style);
       
@@ -879,11 +850,17 @@ function AppContent() {
           worksheetCanvas.style.setProperty('background-color', '#ffffff', 'important');
           worksheetCanvas.style.setProperty('background', '#ffffff', 'important');
         }
-        
-        // Fix text elements without breaking table structure
+
+        // Fix text elements: only set background to white if not transparent
         const textElements = clonedElement.querySelectorAll('.text-box, .react-rnd:not(.table-wrapper)');
         textElements.forEach(el => {
-          el.style.setProperty('background-color', '#ffffff', 'important');
+          // Try to detect transparency from inline style or data attribute
+          const bg = el.style.backgroundColor || el.getAttribute('data-background-color');
+          if (bg && (bg === 'transparent' || bg === 'rgba(0,0,0,0)' || bg === 'initial')) {
+            el.style.setProperty('background-color', 'transparent', 'important');
+          } else {
+            el.style.setProperty('background-color', '#ffffff', 'important');
+          }
           el.style.setProperty('color', '#000000', 'important');
         });
 
