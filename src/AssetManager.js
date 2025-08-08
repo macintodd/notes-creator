@@ -169,6 +169,15 @@ const AssetManager = forwardRef(({
       fontSize: '8pt',
       fontWeight: 'normal',
       fontStyle: 'normal'
+    },
+    {
+      id: 'target-skill',
+      label: 'Target Skill(s):',
+      style: 'target-skill',
+      preview: 'Target Skill(s):',
+      fontSize: '10pt',
+      fontWeight: 'bold',
+      fontStyle: 'normal'
     }
   ];
 

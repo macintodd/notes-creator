@@ -1,6 +1,7 @@
 
 // WorksheetCanvas.js
 import React, { Component } from 'react';
+import TextFormatMenu from './TextFormatMenu';
 import TextBox from './TextBox';
 import TableBlock from './TableBlock';
 import 'katex/dist/katex.min.css';
@@ -1110,6 +1111,15 @@ export default class WorksheetCanvas extends Component {
 
   createProblemBlock = (x, y, problems) => {
     // Handle both single problem (string) and multiple problems (array)
+    const defaultFontSizePx = 10; // was 10 * 1.33 shawn
+    const defaultProps = {
+      fontSize: defaultFontSizePx,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      hasStroke: false,
+      backgroundColor: 'var(--fall-light-taupe)',
+      fromTable: false // Mark as worksheet-dropped
+    };
     if (Array.isArray(problems)) {
       // Multiple problems - create a block for each one, stacking them vertically
       const newProblems = problems.map((problem, index) => {
@@ -1121,10 +1131,10 @@ export default class WorksheetCanvas extends Component {
           y: this.props.snapToGrid ? this.snapToGrid(y + offsetY) : y + offsetY,
           width: 200,
           height: 80,
-          text: problem // Each problem should be a string
+          text: problem, // Each problem should be a string
+          ...defaultProps
         };
       });
-
       this.setState(prevState => ({
         elements: [...prevState.elements, ...newProblems],
         nextId: prevState.nextId + problems.length
@@ -1138,9 +1148,9 @@ export default class WorksheetCanvas extends Component {
         y: this.props.snapToGrid ? this.snapToGrid(y) : y,
         width: 200,
         height: 80,
-        text: problems // problems is actually a single text string in this case
+        text: problems, // problems is actually a single text string in this case
+        ...defaultProps
       };
-
       this.setState(prevState => ({
         elements: [...prevState.elements, newProblem],
         nextId: prevState.nextId + 1
@@ -1430,6 +1440,11 @@ export default class WorksheetCanvas extends Component {
   render() {
     const { header } = this.state;
     
+    // Find selected worksheet-dropped problem or text box for formatting
+    const selectedElement = this.state.elements.find(
+      el => el.isSelected && (el.type === 'text' || (el.type === 'problem' && !el.fromTable))
+    );
+
     return (
       <div 
         className="worksheet-canvas" 
@@ -1458,6 +1473,32 @@ export default class WorksheetCanvas extends Component {
           border: '2px solid red'
         }}
       >
+        {/* TextFormatMenu for selected text or worksheet-dropped problem */}
+        {selectedElement && (
+          <TextFormatMenu
+            key={selectedElement.id}
+            fontSize={selectedElement.fontSize}
+            fontWeight={selectedElement.fontWeight}
+            fontStyle={selectedElement.fontStyle}
+            hasStroke={selectedElement.hasStroke || false}
+            backgroundColor={selectedElement.backgroundColor || 'transparent'}
+            onChange={({ fontSize, fontWeight, fontStyle, hasStroke, backgroundColor }) => {
+              this.handleUpdateElement(selectedElement.id, {
+                fontSize,
+                fontWeight,
+                fontStyle,
+                hasStroke,
+                backgroundColor
+              });
+            }}
+            allowBackgroundOptions={true}
+            allowStrokeToggle={true}
+            allowFontSize={true}
+            allowFontWeight={true}
+            allowFontStyle={true}
+          />
+        )}
+
         <Header 
           unit={header.unit}
           lesson={header.lesson}
@@ -1639,6 +1680,8 @@ export default class WorksheetCanvas extends Component {
               { handle: 'bottom', style: { left: '50%', bottom: -6, transform: 'translateX(-50%)', cursor: 'ns-resize' } },
               { handle: 'bottom-right', style: { right: -6, bottom: -6, cursor: 'nwse-resize' } }
             ] : [];
+            // Only worksheet-dropped problems (not table cell problems) get formatting
+            const isWorksheetProblem = !el.fromTable;
             return (
               <div
                 key={el.id}
@@ -1649,8 +1692,8 @@ export default class WorksheetCanvas extends Component {
                   top: el.y,
                   width: el.width,
                   height: el.height,
-                  background: 'var(--fall-light-taupe)',
-                  border: '1px solid var(--fall-taupe)',
+                  background: typeof el.backgroundColor === 'string' ? el.backgroundColor : 'var(--fall-light-taupe)',
+                  border: el.hasStroke ? '2px solid var(--fall-taupe)' : 'none',
                   borderRadius: 4,
                   padding: 8,
                   cursor: 'move',
@@ -1668,7 +1711,12 @@ export default class WorksheetCanvas extends Component {
                 }}
                 onClick={(e) => this.handleSelectElement(el.id, e)}
               >
-                <RenderEquation equation={el.text} />
+                <RenderEquation 
+                  equation={el.text} 
+                  fontSize={el.fontSize}
+                  fontWeight={el.fontWeight}
+                  fontStyle={el.fontStyle}
+                />
                 {resizeHandles.map(rh => (
                   <div
                     key={rh.handle}
@@ -1697,12 +1745,21 @@ export default class WorksheetCanvas extends Component {
   }
 }
 
-function RenderEquation({ equation }) {
+function RenderEquation({ equation, fontSize, fontWeight, fontStyle }) {
   // Ensure equation is a string
   const equationStr = typeof equation === 'string' ? equation : String(equation || '');
-  
+  const style = {
+    fontSize: fontSize ? fontSize : 10,//was 13/3
+    fontWeight: fontWeight || 'normal',
+    fontStyle: fontStyle || 'normal',
+  };
   if (equationStr && equationStr.startsWith('$$') && equationStr.endsWith('$$')) {
-    return <BlockMath math={equationStr.slice(2, -2)} />;
+    // BlockMath does not always respect the style prop directly, so wrap in a div/span
+    return (
+      <div style={style}>
+        <BlockMath math={equationStr.slice(2, -2)} />
+      </div>
+    );
   }
-  return <span>{equationStr}</span>;
+  return <span style={style}>{equationStr}</span>;
 }

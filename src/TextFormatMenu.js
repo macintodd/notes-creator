@@ -4,11 +4,23 @@ import React, { Component } from 'react';
 class TextFormatMenu extends Component {
   dragOffset = null;
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      position: { x: props.x || 0, y: props.y || 0 },
+      showColorPicker: false,
+      centerText: !!props.textAlign && props.textAlign === 'center',
+      fontSize: typeof props.fontSize === 'number' ? props.fontSize : (parseInt(props.fontSize, 10) || 14),
+      hasStroke: !!props.hasStroke,
+      backgroundColor: props.backgroundColor || 'transparent',
+    };
+    this.menuRef = React.createRef();
+    this.dragOffset = null;
+  }
+
   handleMouseDown = (e) => {
-    // Only left mouse button
     if (e.button !== 0) return;
     const { position } = this.state;
-    // Record offset between mouse and menu top-left
     const startX = e.clientX;
     const startY = e.clientY;
     this.dragOffset = {
@@ -31,11 +43,17 @@ class TextFormatMenu extends Component {
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   };
+
   handleBackgroundColorChange = (color) => {
-    const { onBackgroundColorChange } = this.props;
-    if (onBackgroundColorChange) {
-      onBackgroundColorChange(color);
-    }
+    this.setState({ backgroundColor: color }, () => {
+      if (this.props.onChange) {
+        this.props.onChange({
+          backgroundColor: color,
+          fontSize: this.state.fontSize,
+          hasStroke: this.state.hasStroke
+        });
+      }
+    });
   };
 
   toggleColorPicker = () => {
@@ -43,30 +61,31 @@ class TextFormatMenu extends Component {
   };
 
   handleStrokeToggle = () => {
-    const { onStrokeToggle } = this.props;
-    if (onStrokeToggle) {
-      onStrokeToggle();
-    }
+    this.setState(
+      prevState => ({ hasStroke: !prevState.hasStroke }),
+      () => {
+        if (this.props.onChange) {
+          this.props.onChange({
+            hasStroke: this.state.hasStroke,
+            backgroundColor: this.state.backgroundColor,
+            fontSize: this.state.fontSize
+          });
+        }
+      }
+    );
   };
-  constructor(props) {
-    super(props);
-    this.state = {
-      position: { x: props.x || 0, y: props.y || 0 },
-      showColorPicker: false,
-      centerText: !!props.textAlign && props.textAlign === 'center',
-      fontSize: typeof props.fontSize === 'number' ? props.fontSize : (parseInt(props.fontSize, 10) || 14)
-    };
-    this.menuRef = React.createRef();
-    this.dragOffset = null;
-  }
+
   handleFontSizeChange = (delta) => {
-    const { onFontSizeChange } = this.props;
     this.setState(prevState => {
       let newFontSize = (prevState.fontSize || 14) + delta;
       if (newFontSize < 6) newFontSize = 6;
       if (newFontSize > 200) newFontSize = 200;
-      if (onFontSizeChange) {
-        onFontSizeChange(newFontSize);
+      if (this.props.onChange) {
+        this.props.onChange({
+          fontSize: newFontSize,
+          backgroundColor: this.state.backgroundColor,
+          hasStroke: this.state.hasStroke
+        });
       }
       return { fontSize: newFontSize };
     });
