@@ -2,6 +2,35 @@
 import React, { Component } from 'react';
 
 class TextFormatMenu extends Component {
+  dragOffset = null;
+
+  handleMouseDown = (e) => {
+    // Only left mouse button
+    if (e.button !== 0) return;
+    const { position } = this.state;
+    // Record offset between mouse and menu top-left
+    const startX = e.clientX;
+    const startY = e.clientY;
+    this.dragOffset = {
+      x: startX - position.x,
+      y: startY - position.y
+    };
+    document.addEventListener('mousemove', this.handleMouseMove);
+    document.addEventListener('mouseup', this.handleMouseUp);
+  };
+
+  handleMouseMove = (e) => {
+    if (!this.dragOffset) return;
+    const newX = e.clientX - this.dragOffset.x;
+    const newY = e.clientY - this.dragOffset.y;
+    this.setState({ position: { x: newX, y: newY } });
+  };
+
+  handleMouseUp = () => {
+    this.dragOffset = null;
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.handleMouseUp);
+  };
   handleBackgroundColorChange = (color) => {
     const { onBackgroundColorChange } = this.props;
     if (onBackgroundColorChange) {
@@ -28,6 +57,7 @@ class TextFormatMenu extends Component {
       fontSize: typeof props.fontSize === 'number' ? props.fontSize : (parseInt(props.fontSize, 10) || 14)
     };
     this.menuRef = React.createRef();
+    this.dragOffset = null;
   }
   handleFontSizeChange = (delta) => {
     const { onFontSizeChange } = this.props;
@@ -254,7 +284,7 @@ class TextFormatMenu extends Component {
               <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{fontSize}</span>
               <button
                 style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
-                onClick={() => this.handleFontSizeChange(1)}
+                onClick={() => this.handleFontSizeChange(2)}
                 title="Increase font size"
               >
                 +
