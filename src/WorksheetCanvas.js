@@ -35,6 +35,7 @@ export default class WorksheetCanvas extends Component {
       graphDragState: null,
       graphResizeState: null,
       textboxDragState: null, // Track textbox drag state
+      problemDragState: null, // Track worksheet problem drag state
       clipboardTable: null, // Store copied table structure
       // Guided notes features
       verticalGuideLineX: 144, // 2.0 inches from left (1.75 + 0.25) * 72 = 144px
@@ -44,6 +45,45 @@ export default class WorksheetCanvas extends Component {
     this.gridSize = 24;
     this.contentRef = React.createRef();
     this.lastPasteTime = 0; // Prevent duplicate paste operations
+  }
+
+  // Problem (equation) drag logic for worksheet-dropped equations
+  handleProblemMouseDown = (e, element) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.handleSelectElement(element.id, null);
+    this.setState({
+      problemDragState: {
+        id: element.id,
+        startX: e.clientX,
+        startY: e.clientY,
+        originalX: element.x,
+        originalY: element.y
+      }
+    });
+    window.addEventListener('mousemove', this.handleProblemMouseMove);
+    window.addEventListener('mouseup', this.handleProblemMouseUp);
+  }
+
+  handleProblemMouseMove = (e) => {
+    const { problemDragState } = this.state;
+    if (!problemDragState) return;
+    const dx = e.clientX - problemDragState.startX;
+    const dy = e.clientY - problemDragState.startY;
+    this.setState((prevState) => ({
+      elements: prevState.elements.map((el) =>
+        el.id === problemDragState.id
+          ? { ...el, x: this.props.snapToGrid ? this.snapToGrid(problemDragState.originalX + dx) : problemDragState.originalX + dx,
+                      y: this.props.snapToGrid ? this.snapToGrid(problemDragState.originalY + dy) : problemDragState.originalY + dy }
+          : el
+      )
+    }));
+  }
+
+  handleProblemMouseUp = () => {
+    this.setState({ problemDragState: null });
+    window.removeEventListener('mousemove', this.handleProblemMouseMove);
+    window.removeEventListener('mouseup', this.handleProblemMouseUp);
   }
 
   // TextBox drag logic (now matches TableBlock)
@@ -1502,7 +1542,10 @@ export default class WorksheetCanvas extends Component {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  zIndex: 21,
+                  userSelect: 'none',
                 }}
+                onMouseDown={(e) => this.handleProblemMouseDown(e, el)}
               >
                 <RenderEquation equation={el.text} />
               </div>
