@@ -1,3 +1,4 @@
+
 // WorksheetCanvas.js
 import React, { Component } from 'react';
 import TextBox from './TextBox';
@@ -11,14 +12,120 @@ import NotesPrompt from './NotesPrompt';
 import VerticalGuideLine from './VerticalGuideLine';
 import PropTypes from 'prop-types';
 
+// ...existing code...
+
 export default class WorksheetCanvas extends Component {
-  static propTypes = {
-    snapToGrid: PropTypes.bool,
-    zoom: PropTypes.number,
-    onHeaderChange: PropTypes.func,
-    onProblemUsed: PropTypes.func,
-    onLoadUsedProblems: PropTypes.func,
-    ref: PropTypes.object
+  // ...existing code...
+
+  handleProblemResizeMouseDown = (e, element, handle) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.handleSelectElement(element.id, null);
+    this.setState({
+      problemResizeState: {
+        id: element.id,
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth: element.width,
+        startHeight: element.height,
+        startLeft: element.x,
+        startTop: element.y,
+        handle
+      }
+    });
+    window.addEventListener('mousemove', this.handleProblemResizeMouseMove);
+    window.addEventListener('mouseup', this.handleProblemResizeMouseUp);
+  };
+
+  handleProblemResizeMouseMove = (e) => {
+    const { problemResizeState } = this.state;
+    if (!problemResizeState) return;
+    const dx = e.clientX - problemResizeState.startX;
+    const dy = e.clientY - problemResizeState.startY;
+    let newWidth = problemResizeState.startWidth;
+    let newHeight = problemResizeState.startHeight;
+    let newX = problemResizeState.startLeft;
+    let newY = problemResizeState.startTop;
+
+    // Only allow resizing from right/bottom for simplicity
+    if (problemResizeState.handle === 'right') {
+      newWidth = Math.max(60, problemResizeState.startWidth + dx);
+    }
+    if (problemResizeState.handle === 'bottom') {
+      newHeight = Math.max(40, problemResizeState.startHeight + dy);
+    }
+    if (problemResizeState.handle === 'bottom-right') {
+      newWidth = Math.max(60, problemResizeState.startWidth + dx);
+      newHeight = Math.max(40, problemResizeState.startHeight + dy);
+    }
+
+    this.setState((prevState) => ({
+      elements: prevState.elements.map((el) =>
+        el.id === problemResizeState.id
+          ? { ...el, width: newWidth, height: newHeight, x: newX, y: newY }
+          : el
+      )
+    }));
+  };
+
+
+  // ...existing code...
+
+  handleProblemResizeMouseDown = (e, element, handle) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.handleSelectElement(element.id, null);
+    this.setState({
+      problemResizeState: {
+        id: element.id,
+        startX: e.clientX,
+        startY: e.clientY,
+        startWidth: element.width,
+        startHeight: element.height,
+        startLeft: element.x,
+        startTop: element.y,
+        handle
+      }
+    });
+    window.addEventListener('mousemove', this.handleProblemResizeMouseMove);
+    window.addEventListener('mouseup', this.handleProblemResizeMouseUp);
+  };
+
+  handleProblemResizeMouseMove = (e) => {
+    const { problemResizeState } = this.state;
+    if (!problemResizeState) return;
+    const dx = e.clientX - problemResizeState.startX;
+    const dy = e.clientY - problemResizeState.startY;
+    let newWidth = problemResizeState.startWidth;
+    let newHeight = problemResizeState.startHeight;
+    let newX = problemResizeState.startLeft;
+    let newY = problemResizeState.startTop;
+
+    // Only allow resizing from right/bottom for simplicity
+    if (problemResizeState.handle === 'right') {
+      newWidth = Math.max(60, problemResizeState.startWidth + dx);
+    }
+    if (problemResizeState.handle === 'bottom') {
+      newHeight = Math.max(40, problemResizeState.startHeight + dy);
+    }
+    if (problemResizeState.handle === 'bottom-right') {
+      newWidth = Math.max(60, problemResizeState.startWidth + dx);
+      newHeight = Math.max(40, problemResizeState.startHeight + dy);
+    }
+
+    this.setState((prevState) => ({
+      elements: prevState.elements.map((el) =>
+        el.id === problemResizeState.id
+          ? { ...el, width: newWidth, height: newHeight, x: newX, y: newY }
+          : el
+      )
+    }));
+  };
+
+  handleProblemResizeMouseUp = () => {
+    this.setState({ problemResizeState: null });
+    window.removeEventListener('mousemove', this.handleProblemResizeMouseMove);
+    window.removeEventListener('mouseup', this.handleProblemResizeMouseUp);
   };
 
   constructor(props) {
@@ -36,6 +143,7 @@ export default class WorksheetCanvas extends Component {
       graphResizeState: null,
       textboxDragState: null, // Track textbox drag state
       problemDragState: null, // Track worksheet problem drag state
+      problemResizeState: null, // Track worksheet problem resize state
       clipboardTable: null, // Store copied table structure
       // Guided notes features
       verticalGuideLineX: 144, // 2.0 inches from left (1.75 + 0.25) * 72 = 144px
@@ -1524,6 +1632,13 @@ export default class WorksheetCanvas extends Component {
           }
 
           if (el.type === 'problem') {
+            // Render resize handles if selected
+            const isSelected = !!el.isSelected;
+            const resizeHandles = isSelected ? [
+              { handle: 'right', style: { right: -6, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' } },
+              { handle: 'bottom', style: { left: '50%', bottom: -6, transform: 'translateX(-50%)', cursor: 'ns-resize' } },
+              { handle: 'bottom-right', style: { right: -6, bottom: -6, cursor: 'nwse-resize' } }
+            ] : [];
             return (
               <div
                 key={el.id}
@@ -1544,10 +1659,33 @@ export default class WorksheetCanvas extends Component {
                   justifyContent: 'center',
                   zIndex: 21,
                   userSelect: 'none',
+                  boxSizing: 'border-box',
                 }}
-                onMouseDown={(e) => this.handleProblemMouseDown(e, el)}
+                onMouseDown={(e) => {
+                  // Only drag if not clicking a resize handle
+                  if (e.target.dataset && e.target.dataset.handle) return;
+                  this.handleProblemMouseDown(e, el);
+                }}
+                onClick={(e) => this.handleSelectElement(el.id, e)}
               >
                 <RenderEquation equation={el.text} />
+                {resizeHandles.map(rh => (
+                  <div
+                    key={rh.handle}
+                    data-handle={rh.handle}
+                    onMouseDown={e => this.handleProblemResizeMouseDown(e, el, rh.handle)}
+                    style={{
+                      position: 'absolute',
+                      width: 12,
+                      height: 12,
+                      background: 'var(--fall-burnt-orange)',
+                      border: '2px solid #fff',
+                      borderRadius: 6,
+                      zIndex: 22,
+                      ...rh.style
+                    }}
+                  />
+                ))}
               </div>
             );
           }
