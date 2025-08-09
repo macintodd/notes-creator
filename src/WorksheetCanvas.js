@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
 
 // ...existing code...
 
-export default class WorksheetCanvas extends Component {
+class WorksheetCanvas extends Component {
   // ...existing code...
 
   handleProblemResizeMouseDown = (e, element, handle) => {
@@ -149,12 +149,22 @@ export default class WorksheetCanvas extends Component {
       // Guided notes features
       verticalGuideLineX: 144, // 2.0 inches from left (1.75 + 0.25) * 72 = 144px
       showNotesPrompt: true,
-      notesPromptText: "Ur notes and\nquestions"
+      notesPromptText: "Ur notes and\nquestions",
+      snapToGridHorizontal: true,
+      snapToGridVertical: true
     };
     this.gridSize = 24;
     this.contentRef = React.createRef();
     this.lastPasteTime = 0; // Prevent duplicate paste operations
   }
+
+  // Snap X and Y independently
+  snapX = (x) => {
+    return this.state.snapToGridHorizontal ? this.snapToGrid(x) : x;
+  };
+  snapY = (y) => {
+    return this.state.snapToGridVertical ? this.snapToGrid(y) : y;
+  };
 
   // Problem (equation) drag logic for worksheet-dropped equations
   handleProblemMouseDown = (e, element) => {
@@ -182,8 +192,11 @@ export default class WorksheetCanvas extends Component {
     this.setState((prevState) => ({
       elements: prevState.elements.map((el) =>
         el.id === problemDragState.id
-          ? { ...el, x: this.props.snapToGrid ? this.snapToGrid(problemDragState.originalX + dx) : problemDragState.originalX + dx,
-                      y: this.props.snapToGrid ? this.snapToGrid(problemDragState.originalY + dy) : problemDragState.originalY + dy }
+          ? {
+              ...el,
+              x: this.snapX(problemDragState.originalX + dx),
+              y: this.snapY(problemDragState.originalY + dy)
+            }
           : el
       )
     }));
@@ -209,6 +222,25 @@ export default class WorksheetCanvas extends Component {
         originalY: element.y
       }
     });
+    // Add mousemove/mouseup listeners for textbox drag
+    window.addEventListener('mousemove', this.handleTextBoxMouseMove);
+    window.addEventListener('mouseup', this.handleTextBoxMouseUp);
+  };
+
+  handleTextBoxMouseMove = (e) => {
+    const { textboxDragState } = this.state;
+    if (!textboxDragState) return;
+    const dx = e.clientX - textboxDragState.startX;
+    const dy = e.clientY - textboxDragState.startY;
+    let newX = this.snapX(textboxDragState.originalX + dx);
+    let newY = this.snapY(textboxDragState.originalY + dy);
+    this.handleUpdateElement(textboxDragState.id, { x: newX, y: newY });
+  };
+
+  handleTextBoxMouseUp = () => {
+    this.setState({ textboxDragState: null });
+    window.removeEventListener('mousemove', this.handleTextBoxMouseMove);
+    window.removeEventListener('mouseup', this.handleTextBoxMouseUp);
   };
 
   snapToGrid = (value) => {
@@ -422,7 +454,7 @@ export default class WorksheetCanvas extends Component {
     const maxY = 2112 - graphData.height - 50; // Two-page height minus graph height and margin
     graphY = Math.min(Math.max(60, graphY), maxY); // Minimum 60px from top, maximum maxY
     
-    let graphX = 24; // left margin by default
+    let graphX = this.state.verticalGuideLineX; // align with vertical guide line
     
     const newGraph = {
       id: this.state.nextId,
@@ -462,8 +494,10 @@ export default class WorksheetCanvas extends Component {
     let textX = this.state.verticalGuideLineX; // 10px margin from guide line
 
     // Snap to grid if enabled
-    if (this.props.snapToGrid) {
+    if (this.state.snapToGridHorizontal) {
       textX = this.snapToGrid(textX);
+    }
+    if (this.state.snapToGridVertical) {
       textY = this.snapToGrid(textY);
     }
 
@@ -491,18 +525,32 @@ export default class WorksheetCanvas extends Component {
   handleUpdateElement = (id, updates) => {
     console.log('🔄 Handle update element:', id, updates);
     this.setState((prevState) => ({
-      elements: prevState.elements.map((el) =>
-        el.id === id
-          ? {
-              ...el,
-              ...updates,
-              x: this.props.snapToGrid && updates.x !== undefined ? this.snapToGrid(updates.x) : updates.x ?? el.x,
-              y: updates.y !== undefined
-    ? (this.props.snapToGrid ? this.snapToGrid(updates.y) : updates.y)
-    : el.y,
-            }
-          : el
-      ),
+      elements: prevState.elements.map((el) => {
+        if (el.id !== id) return el;
+        // Snap logic for problems, textboxes, and graphs
+        let newX = updates.x !== undefined ? updates.x : el.x;
+        let newY = updates.y !== undefined ? updates.y : el.y;
+        if (el.type === 'problem') {
+          newX = updates.x !== undefined ? this.snapX(updates.x) : el.x;
+          newY = updates.y !== undefined ? this.snapY(updates.y) : el.y;
+        } else if (el.type === 'textbox') {
+          newX = updates.x !== undefined ? this.snapX(updates.x) : el.x;
+          newY = updates.y !== undefined ? this.snapY(updates.y) : el.y;
+        } else if (el.type === 'graph') {
+          newX = updates.x !== undefined ? this.snapX(updates.x) : el.x;
+          newY = updates.y !== undefined ? this.snapY(updates.y) : el.y;
+        } else if (this.props.snapToGrid && updates.x !== undefined) {
+          newX = this.snapToGrid(updates.x);
+        } else if (this.props.snapToGrid && updates.y !== undefined) {
+          newY = this.snapToGrid(updates.y);
+        }
+        return {
+          ...el,
+          ...updates,
+          x: newX,
+          y: newY,
+        };
+      }),
     }), () => {
       // Auto-number problems after state update if cellValues were updated
       if (updates.cellValues) {
@@ -523,10 +571,7 @@ export default class WorksheetCanvas extends Component {
   // Multi-table synchronized update function
   handleMultiTableUpdate = (triggerTableId, updates) => {
     console.log('📐 Multi-table update triggered by:', triggerTableId, updates);
-    
-    // Find all selected tables
     const selectedTables = this.state.elements.filter(el => el.isSelected && el.type === 'table');
-    
     if (selectedTables.length > 1) {
       console.log('📐 Updating', selectedTables.length, 'selected tables');
       
@@ -559,27 +604,17 @@ export default class WorksheetCanvas extends Component {
               
               // If this is not the first table, calculate new Y position to maintain spacing
               if (tableIndex > 0) {
-                // Start from the first table and work down, maintaining gaps
-                let cumulativeY = sortedTables[0].y;
-                
-                for (let i = 0; i < tableIndex; i++) {
-                  // Add the height of the current table + its bottom padding
-                  cumulativeY += (updates.rowHeight + 20);
-                  // Add the original gap to the next table
-                  if (i < initialGaps.length) {
-                    cumulativeY += initialGaps[i];
-                  }
-                }
-                
-                newY = cumulativeY;
-                console.log(`📐 Table ${el.id} new Y position to maintain spacing:`, newY);
+                // Maintain spacing from previous table
+                const prevTable = sortedTables[tableIndex - 1];
+                const prevBottom = prevTable.y + (updates.rowHeight !== undefined ? updates.rowHeight + 20 : prevTable.rowHeight + 20);
+                const gap = initialGaps[tableIndex - 1];
+                newY = prevBottom + gap;
               }
               
               return {
                 ...el,
-                // Handle position updates with snap-to-grid and spacing maintenance
-                x: this.props.snapToGrid && updates.x !== undefined ? this.snapToGrid(updates.x) : (updates.x ?? el.x),
-                y: this.props.snapToGrid ? this.snapToGrid(newY) : newY,
+                x: updates.x !== undefined ? this.snapX(updates.x) : el.x,
+                y: this.snapY(newY),
                 // Handle rowHeight specifically for tables
                 rowHeight: updates.rowHeight !== undefined ? updates.rowHeight : el.rowHeight,
                 // Apply any other updates
@@ -600,10 +635,8 @@ export default class WorksheetCanvas extends Component {
               return {
                 ...el,
                 // Handle position updates with snap-to-grid
-                x: this.props.snapToGrid && updates.x !== undefined ? this.snapToGrid(updates.x) : (updates.x ?? el.x),
-                y: updates.y !== undefined
-                  ? (this.props.snapToGrid ? this.snapToGrid(updates.y) : updates.y)
-                  : el.y,
+                x: updates.x !== undefined ? this.snapX(updates.x) : el.x,
+                y: updates.y !== undefined ? this.snapY(updates.y) : el.y,
                 // Apply any other updates
                 ...Object.fromEntries(
                   Object.entries(updates).filter(([key]) => !['x', 'y'].includes(key))
@@ -816,20 +849,14 @@ export default class WorksheetCanvas extends Component {
 
   handleGraphGlobalMouseMove = (e) => {
     const { graphDragState, graphResizeState, textboxDragState } = this.state;
-    const { snapToGrid = false } = this.props;
-    const gridSize = this.gridSize;
+    // Use axis-specific snap for graphs and textboxes
 
     if (graphDragState) {
       e.preventDefault();
       const dx = e.clientX - graphDragState.startX;
       const dy = e.clientY - graphDragState.startY;
-      let newX = graphDragState.startLeft + dx;
-      let newY = graphDragState.startTop + dy;
-      // Apply snap-to-grid if enabled
-      if (snapToGrid) {
-        newX = Math.round(newX / gridSize) * gridSize;
-        newY = Math.round(newY / gridSize) * gridSize;
-      }
+      let newX = this.snapX(graphDragState.startLeft + dx);
+      let newY = this.snapY(graphDragState.startTop + dy);
       this.handleUpdateElement(graphDragState.id, { x: newX, y: newY });
     }
 
@@ -837,14 +864,8 @@ export default class WorksheetCanvas extends Component {
       e.preventDefault();
       const dx = e.clientX - textboxDragState.startX;
       const dy = e.clientY - textboxDragState.startY;
-      let newX, newY;
-      if (snapToGrid) {
-        newX = Math.round((textboxDragState.originalX + dx) / gridSize) * gridSize;
-        newY = Math.round((textboxDragState.originalY + dy) / gridSize) * gridSize;
-      } else {
-        newX = textboxDragState.originalX + dx;
-        newY = textboxDragState.originalY + dy;
-      }
+      let newX = this.snapX(textboxDragState.originalX + dx);
+      let newY = this.snapY(textboxDragState.originalY + dy);
       this.handleUpdateElement(textboxDragState.id, { x: newX, y: newY });
     }
 
@@ -879,11 +900,9 @@ export default class WorksheetCanvas extends Component {
         }
       }
 
-      // Apply snap-to-grid to position if enabled
-      if (snapToGrid) {
-        newX = Math.round(newX / gridSize) * gridSize;
-        newY = Math.round(newY / gridSize) * gridSize;
-      }
+      // Apply axis-specific snap for graph position
+      newX = this.snapX(newX);
+      newY = this.snapY(newY);
 
       this.handleUpdateElement(graphResizeState.id, {
         width: newWidth,
@@ -1127,8 +1146,8 @@ export default class WorksheetCanvas extends Component {
         return {
           id: this.state.nextId + index,
           type: 'problem',
-          x: this.props.snapToGrid ? this.snapToGrid(x) : x,
-          y: this.props.snapToGrid ? this.snapToGrid(y + offsetY) : y + offsetY,
+          x: this.snapX(x),
+          y: this.snapY(y + offsetY),
           width: 200,
           height: 80,
           text: problem, // Each problem should be a string
@@ -1144,8 +1163,8 @@ export default class WorksheetCanvas extends Component {
       const newProblem = {
         id: this.state.nextId,
         type: 'problem',
-        x: this.props.snapToGrid ? this.snapToGrid(x) : x,
-        y: this.props.snapToGrid ? this.snapToGrid(y) : y,
+        x: this.snapX(x),
+        y: this.snapY(y),
         width: 200,
         height: 80,
         text: problems, // problems is actually a single text string in this case
@@ -1213,8 +1232,8 @@ export default class WorksheetCanvas extends Component {
     const newTextBox = {
       id: this.state.nextId,
       type: 'text',
-      x: this.props.snapToGrid ? this.snapToGrid(textX) : textX,
-      y: this.props.snapToGrid ? this.snapToGrid(y) : y,
+      x: this.snapX(textX),
+      y: this.snapY(y),
       width: textWidth,
       height: 60,
       text: text,
@@ -1414,15 +1433,7 @@ export default class WorksheetCanvas extends Component {
     document.addEventListener('mousemove', this.handleGraphGlobalMouseMove);
     document.addEventListener('mouseup', this.handleGraphGlobalMouseUp);
     
-    // Set up ref methods
-    if (this.props.ref) {
-      this.props.ref.current = {
-        exportData: this.exportData.bind(this),
-        exportTableSettings: this.exportTableSettings.bind(this),
-        handleHeaderChange: this.handleHeaderChange.bind(this),
-        loadData: this.loadData.bind(this)
-      };
-    }
+    // No manual ref assignment needed; ref will point to class instance
   }
 
   componentWillUnmount() {
@@ -1439,41 +1450,50 @@ export default class WorksheetCanvas extends Component {
 
   render() {
     const { header } = this.state;
-    
-    // Find selected worksheet-dropped problem or text box for formatting
-    const selectedElement = this.state.elements.find(
-      el => el.isSelected && (el.type === 'text' || (el.type === 'problem' && !el.fromTable))
-    );
-
+    const selectedElement = this.state.elements.find(el => el.isSelected);
     return (
-      <div 
-        className="worksheet-canvas" 
-        ref={this.contentRef}
-        tabIndex={0}
-        onFocus={() => {
-          console.log('Canvas focused');
-        }}
-        onKeyDown={this.handleKeyDown}
-        onDrop={this.handleDrop}
-        onDragOver={this.handleDragOver}
-        onClick={(e) => {
-          // Don't deselect if user is holding Shift (for multi-select)
-          // Don't deselect if clicking on table drag handle or after graph interaction
-          if (!e.shiftKey && 
-              !e.target.classList.contains('table-drag-handle') && 
-              !this.state.justFinishedGraphInteraction) {
-            console.log('🔍 Canvas clicked - deselecting all (no Shift key)');
-            this.handleDeselectAll();
-          } else if (e.shiftKey) {
-            console.log('🔍 Canvas clicked with Shift - preserving selection for multi-select');
-          }
-        }}
-        style={{ 
-          position: 'relative',  // Ensure this is set
-          border: '2px solid red'
-        }}
-      >
-        {/* TextFormatMenu for selected text or worksheet-dropped problem */}
+      <div>
+        {/* Snap to Grid Toggles */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', margin: '8px 0 8px 8px' }}>
+          <label style={{ userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={this.state.snapToGridHorizontal}
+              onChange={e => this.setState({ snapToGridHorizontal: e.target.checked })}
+            />
+            SNG Horiz
+          </label>
+          <label style={{ userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={this.state.snapToGridVertical}
+              onChange={e => this.setState({ snapToGridVertical: e.target.checked })}
+            />
+            SNG Vert
+          </label>
+        </div>
+        <div 
+          className="worksheet-canvas" 
+          ref={this.contentRef}
+          tabIndex={0}
+          onFocus={() => {
+            console.log('Canvas focused');
+          }}
+          onKeyDown={this.handleKeyDown}
+          onDrop={this.handleDrop}
+          onDragOver={this.handleDragOver}
+          onClick={(e) => {
+            if (!e.shiftKey && 
+                !e.target.classList.contains('table-drag-handle') && 
+                !this.state.justFinishedGraphInteraction) {
+              this.handleDeselectAll();
+            }
+          }}
+          style={{ 
+            position: 'relative',
+            border: '2px solid red'
+          }}
+        >
         {selectedElement && (
           <TextFormatMenu
             key={selectedElement.id}
@@ -1498,44 +1518,36 @@ export default class WorksheetCanvas extends Component {
             allowFontStyle={true}
           />
         )}
-
         <Header 
           unit={header.unit}
           lesson={header.lesson}
           title={header.title}
         />
-        
-        {/* Horizontal line separator */}
         <div 
           style={{
             position: 'absolute',
             left: 24,
             right: 24,
-            top: 42, // 4 pixels below header text (24px header top + 14px font height + 4px gap)
+            top: 42,
             height: '1px',
             backgroundColor: '#000',
             zIndex: 5
           }}
         />
-        
-        {/* Notes prompt */}
         {this.state.showNotesPrompt && (
           <NotesPrompt 
-            x={24} // Align with grid left margin
-            y={50} // Positioned just below the horizontal line
-            width={(this.state.verticalGuideLineX + 32) / 2} // About half the distance to the guide line
+            x={24}
+            y={50}
+            width={(this.state.verticalGuideLineX + 32) / 2}
             initialText={this.state.notesPromptText}
             onUpdate={this.handleNotesPromptChange}
           />
         )}
-        
-        {/* Vertical guide line */}
         <VerticalGuideLine
           initialX={this.state.verticalGuideLineX}
           onPositionChange={this.handleVerticalGuideLineChange}
           canvasHeight={1584}
         />
-        
         <Footer 
           title={header.title}
           isPage2={false}
@@ -1547,55 +1559,6 @@ export default class WorksheetCanvas extends Component {
         />
         {this.renderGrid()}
         {this.state.elements.map((el) => {
-          if (el.type === 'text') {
-            return (
-              <TextBox
-                key={el.id}
-                id={el.id}
-                x={el.x}
-                y={el.y}
-                width={el.width}
-                height={el.height}
-                text={el.text}
-                fontSize={el.fontSize}
-                fontWeight={el.fontWeight}
-                fontStyle={el.fontStyle}
-                strokeWidth={el.strokeWidth}
-                isSelected={!!el.isSelected}
-                backgroundColor={el.backgroundColor || 'transparent'}
-                hasStroke={el.hasStroke || false}
-                onSelect={() => this.handleSelectElement(el.id)}
-                onDeselect={this.handleDeselectAll}
-                onUpdate={this.handleUpdateElement}
-              />
-            );
-          }
-
-          if (el.type === 'table') {
-            return (
-              <TableBlock
-                key={el.id}
-                id={el.id}
-                x={el.x}
-                y={el.y}
-                width={el.width}
-                height={el.height}
-                columns={el.columns}
-                rowHeight={el.rowHeight}
-                cellValues={el.cellValues || []} 
-                isSelected={!!el.isSelected}
-                onSelect={(id, event) => this.handleSelectElement(id, event)}
-                onDeselect={this.handleDeselectAll}
-                onUpdate={this.handleUpdateElement}
-                onMultiUpdate={this.handleMultiTableUpdate}
-                onCellChange={this.handleTableCellChange}
-                onProblemUsed={this.handleProblemUsed}
-                snapToGrid={this.props.snapToGrid}
-                checkAlignment={this.checkTableAlignmentOnDrag}
-              />
-            );
-          }
-
           if (el.type === 'graph') {
             return (
               <div
@@ -1612,7 +1575,7 @@ export default class WorksheetCanvas extends Component {
                   cursor: 'move',
                   background: 'white',
                   overflow: 'hidden',
-                  zIndex: 10 // Render graphs above tables
+                  zIndex: 10
                 }}
                 onClick={(e) => this.handleSelectElement(el.id, e)}
                 onMouseDown={(e) => this.handleGraphMouseDown(e, el)}
@@ -1632,10 +1595,21 @@ export default class WorksheetCanvas extends Component {
               </div>
             );
           }
-
+          if (el.type === 'table') {
+            return (
+              <TableBlock
+                key={el.id}
+                {...el}
+                onSelect={this.handleSelectElement}
+                onCellChange={this.handleTableCellChange}
+                onMultiUpdate={this.handleMultiTableUpdate}
+                onUpdate={this.handleUpdateElement}
+                checkAlignment={this.checkTableAlignmentOnDrag}
+                snapToGrid={this.state.snapToGridVertical}
+              />
+            );
+          }
           if (el.type === 'textbox') {
-            // IMPORTANT: The onMouseDown handler must be attached to the outermost div in TextBox.js for dragging to work.
-            // If TextBox renders a contentEditable or input, make sure the wrapper div has onMouseDown={props.onMouseDown}.
             return (
               <TextBox
                 key={el.id}
@@ -1671,17 +1645,13 @@ export default class WorksheetCanvas extends Component {
               />
             );
           }
-
           if (el.type === 'problem') {
-            // Render resize handles if selected
             const isSelected = !!el.isSelected;
             const resizeHandles = isSelected ? [
               { handle: 'right', style: { right: -6, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' } },
               { handle: 'bottom', style: { left: '50%', bottom: -6, transform: 'translateX(-50%)', cursor: 'ns-resize' } },
               { handle: 'bottom-right', style: { right: -6, bottom: -6, cursor: 'nwse-resize' } }
             ] : [];
-            // Only worksheet-dropped problems (not table cell problems) get formatting
-            const isWorksheetProblem = !el.fromTable;
             return (
               <div
                 key={el.id}
@@ -1705,7 +1675,6 @@ export default class WorksheetCanvas extends Component {
                   boxSizing: 'border-box',
                 }}
                 onMouseDown={(e) => {
-                  // Only drag if not clicking a resize handle
                   if (e.target.dataset && e.target.dataset.handle) return;
                   this.handleProblemMouseDown(e, el);
                 }}
@@ -1737,24 +1706,22 @@ export default class WorksheetCanvas extends Component {
               </div>
             );
           }
-
           return null;
         })}
+        </div>
       </div>
     );
   }
 }
 
 function RenderEquation({ equation, fontSize, fontWeight, fontStyle }) {
-  // Ensure equation is a string
   const equationStr = typeof equation === 'string' ? equation : String(equation || '');
   const style = {
-    fontSize: fontSize ? fontSize : 10,//was 13/3
+    fontSize: fontSize ? fontSize : 10,
     fontWeight: fontWeight || 'normal',
     fontStyle: fontStyle || 'normal',
   };
   if (equationStr && equationStr.startsWith('$$') && equationStr.endsWith('$$')) {
-    // BlockMath does not always respect the style prop directly, so wrap in a div/span
     return (
       <div style={style}>
         <BlockMath math={equationStr.slice(2, -2)} />
@@ -1763,3 +1730,5 @@ function RenderEquation({ equation, fontSize, fontWeight, fontStyle }) {
   }
   return <span style={style}>{equationStr}</span>;
 }
+
+export default WorksheetCanvas;
