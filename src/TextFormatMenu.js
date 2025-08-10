@@ -95,6 +95,7 @@ class TextFormatMenu extends Component {
     const { position, showColorPicker, centerText, fontSize } = this.state;
     const { onClose, backgroundColor = 'transparent', hasStroke = false } = this.props;
 
+
     return (
       <div
         ref={this.menuRef}
@@ -148,6 +149,37 @@ class TextFormatMenu extends Component {
           >
             ×
           </button>
+        </div>
+
+        {/* Snap to Grid Controls (STG, Horiz, Vert) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, margin: '8px 0 0 8px' }}>
+          <label style={{ userSelect: 'none', fontWeight: 500, marginBottom: 2 }}>
+            <input
+              type="checkbox"
+              checked={this.props.snapToGrid}
+              onChange={e => this.props.onSnapToGridChange?.(e.target.checked)}
+              style={{ marginRight: 4 }}
+            />
+            STG (Snap to Grid)
+          </label>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginLeft: 2 }}>
+            <label style={{ userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={this.props.snapToGridHorizontal}
+                onChange={e => this.props.onSnapToGridHorizontalChange?.(e.target.checked)}
+              />
+              Horiz
+            </label>
+            <label style={{ userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={this.props.snapToGridVertical}
+                onChange={e => this.props.onSnapToGridVerticalChange?.(e.target.checked)}
+              />
+              Vert
+            </label>
+          </div>
         </div>
 
         {/* Menu content */}

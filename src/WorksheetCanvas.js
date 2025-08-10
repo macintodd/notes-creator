@@ -1453,25 +1453,6 @@ class WorksheetCanvas extends Component {
     const selectedElement = this.state.elements.find(el => el.isSelected);
     return (
       <div>
-        {/* Snap to Grid Toggles */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center', margin: '8px 0 8px 8px' }}>
-          <label style={{ userSelect: 'none' }}>
-            <input
-              type="checkbox"
-              checked={this.state.snapToGridHorizontal}
-              onChange={e => this.setState({ snapToGridHorizontal: e.target.checked })}
-            />
-            SNG Horiz
-          </label>
-          <label style={{ userSelect: 'none' }}>
-            <input
-              type="checkbox"
-              checked={this.state.snapToGridVertical}
-              onChange={e => this.setState({ snapToGridVertical: e.target.checked })}
-            />
-            SNG Vert
-          </label>
-        </div>
         <div 
           className="worksheet-canvas" 
           ref={this.contentRef}
@@ -1516,6 +1497,12 @@ class WorksheetCanvas extends Component {
             allowFontSize={true}
             allowFontWeight={true}
             allowFontStyle={true}
+            snapToGrid={this.props.snapToGrid}
+            onSnapToGridChange={checked => this.props.onToggleSnap?.(checked)}
+            snapToGridHorizontal={this.state.snapToGridHorizontal}
+            snapToGridVertical={this.state.snapToGridVertical}
+            onSnapToGridHorizontalChange={checked => this.setState({ snapToGridHorizontal: checked })}
+            onSnapToGridVerticalChange={checked => this.setState({ snapToGridVertical: checked })}
           />
         )}
         <Header 
