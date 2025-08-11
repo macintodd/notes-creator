@@ -89,7 +89,7 @@ class TextBox extends Component {
     
     // Show format menu when text box becomes selected
     if (!prevProps.isSelected && this.props.isSelected && !this.state.isEditing) {
-      this.setState({ showFormatMenu: true });
+      this.setState({ showFormatMenu: false });/*I changed to false*/
     }
     
     // Hide format menu when text box becomes unselected
@@ -197,7 +197,8 @@ class TextBox extends Component {
   handleDoubleClick = () => {
     this.setState({ isEditing: true }, () => {
       if (this.textRef.current) {
-        this.textRef.current.textContent = this.props.text || '';
+        // Set innerHTML to preserve formatting
+        this.textRef.current.innerHTML = this.props.text || '';
         this.focusAtEnd();
       }
     });
@@ -205,34 +206,30 @@ class TextBox extends Component {
 
   handleInput = (e) => {
     if (!e.currentTarget) return;
-    
-    const plain = e.currentTarget.textContent;
+    const html = e.currentTarget.innerHTML;
     const scrollHeight = e.currentTarget.scrollHeight;
-    
     // Update height based on content
     this.setState({ 
       size: { ...this.state.size, height: scrollHeight }
     });
-    
     // Update parent with debounce to avoid too many updates during typing
     clearTimeout(this.updateTimeout);
     this.updateTimeout = setTimeout(() => {
-      // Double-check the element still exists before accessing it
       if (e.currentTarget && this.props.onUpdate) {
         this.props.onUpdate(this.props.id, { 
-          text: plain,
+          text: html,
           height: scrollHeight
         });
       }
-    }, 300); // Longer debounce to reduce updates while typing
+    }, 300);
   };
 
   handleBlur = () => {
     // When editing finishes, sync with parent
     if (this.textRef.current && this.props.onUpdate) {
-      const finalText = this.textRef.current.textContent || '';
+      const finalHtml = this.textRef.current.innerHTML || '';
       this.props.onUpdate(this.props.id, { 
-        text: finalText,
+        text: finalHtml,
         height: this.state.size.height
       });
     }
@@ -245,8 +242,26 @@ class TextBox extends Component {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.stopPropagation();
       }
+      // Cmd+1 for bold
+      if (e.metaKey && e.key === '1') {
+        e.preventDefault();
+        document.execCommand('bold');
+        return;
+      }
+      // Cmd+I for italic
+      if (e.metaKey && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        document.execCommand('italic');
+        return;
+      }
+      // Cmd+U for underline
+      if (e.metaKey && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        document.execCommand('underline');
+        return;
+      }
     }
-    
+
     if (e.key === 'Enter' && e.metaKey) {
       // Cmd+Enter finishes editing
       e.preventDefault();
@@ -257,7 +272,8 @@ class TextBox extends Component {
       e.preventDefault();
       e.stopPropagation();
       if (this.textRef.current) {
-        this.textRef.current.textContent = this.props.text || '';
+        // Restore previous HTML
+        this.textRef.current.innerHTML = this.props.text || '';
       }
       this.setState({ isEditing: false });
     }
@@ -438,14 +454,19 @@ class TextBox extends Component {
                 : '1px solid var(--fall-light-taupe)',
             padding: 8,
             backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
-            userSelect: isEditing ? 'text' : 'none',
+            userSelect: this.state.resizeStart ? 'none' : 'text',
             cursor: isEditing ? 'text' : 'move',
             overflow: 'hidden',
             zIndex: isSelected ? 100 : 10, // Normal: 10 (above tables), Selected: 100 (top layer)
             textAlign: this.props.textAlign || 'left',
             ...textStyles
           }}
-          onMouseDown={isEditing ? undefined : this.props.onMouseDown}
+          onMouseDown={isEditing ? undefined : (e) => {
+            // Only call parent's onMouseDown if not editing and not clicking inside editable area
+            if (typeof this.props.onMouseDown === 'function') {
+              this.props.onMouseDown(e);
+            }
+          }}
           onDoubleClick={this.handleDoubleClick}
           onClick={(e) => e.stopPropagation()}
         >
@@ -466,6 +487,7 @@ class TextBox extends Component {
               onInput={this.handleInput}
               onBlur={this.handleBlur}
               onKeyDown={this.handleKeyDown}
+              dangerouslySetInnerHTML={{ __html: this.props.text || '' }}
             />
           ) : (
             <>
@@ -486,13 +508,11 @@ class TextBox extends Component {
                   width: '100%',
                   height: '100%',
                   fontSize,
-                  pointerEvents: 'none',
                   whiteSpace: 'pre-wrap',
                   overflowWrap: 'break-word'
                 }}
-              >
-                {this.parseAndRenderText(text)}
-              </div>
+                dangerouslySetInnerHTML={{ __html: text || '' }}
+              />
             </>
           )}
           {this.renderHandles()}

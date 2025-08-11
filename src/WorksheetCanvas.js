@@ -146,6 +146,7 @@ class WorksheetCanvas extends Component {
       problemDragState: null, // Track worksheet problem drag state
       problemResizeState: null, // Track worksheet problem resize state
       clipboardTable: null, // Store copied table structure
+      clipboardTextbox: null, // Store copied textbox structure
       // Guided notes features
       verticalGuideLineX: 144, // 2.0 inches from left (1.75 + 0.25) * 72 = 144px
       showNotesPrompt: true,
@@ -153,7 +154,7 @@ class WorksheetCanvas extends Component {
       snapToGridHorizontal: true,
       snapToGridVertical: true
     };
-    this.gridSize = 24;
+    this.gridSize = 12//24; shawn change
     this.contentRef = React.createRef();
     this.lastPasteTime = 0; // Prevent duplicate paste operations
   }
@@ -392,7 +393,7 @@ class WorksheetCanvas extends Component {
     const tableCount = this.state.elements.filter(el => el.type === 'table').length;
     
     // Position table to the right of vertical guide line (requirement #7)
-    let tableX = this.state.verticalGuideLineX + 10; // 10px margin from guide line
+    let tableX = this.state.verticalGuideLineX + 5; // 10px margin from guide line
     
     // Calculate position based on current scroll position
     const currentScrollY = window.scrollY || document.documentElement.scrollTop;
@@ -411,7 +412,7 @@ class WorksheetCanvas extends Component {
     // Table width extends from guide line to right margin (1/4 inch from right edge)
     const rightMargin = 18; // 1/4 inch = 18px (1/4 * 72 = 18)
     const worksheetWidth = 816; // 8.5" * 72 dpi = 612, but canvas is 816
-    const tableWidth = worksheetWidth - tableX - rightMargin;
+    const tableWidth = worksheetWidth - tableX - 24;// shawn rightMargin;
     
     // Check for table alignment opportunities (only when snap-to-grid is off)
     const alignment = this.findTableAlignment(tableY, tableX, tableWidth);
@@ -1001,9 +1002,10 @@ class WorksheetCanvas extends Component {
       console.log('Copy command detected');
       e.preventDefault();
       e.stopPropagation(); // Stop event propagation
-      
+
       const selectedTables = this.state.elements.filter(el => el.isSelected && el.type === 'table');
-      
+      const selectedTextboxes = this.state.elements.filter(el => el.isSelected && el.type === 'textbox');
+
       if (selectedTables.length === 1) {
         const selectedTable = selectedTables[0];
         // Store table structure without cell data
@@ -1014,28 +1016,46 @@ class WorksheetCanvas extends Component {
           rowHeight: selectedTable.rowHeight,
           // Don't copy cellValues - we want empty tables
         };
-        
-        this.setState({ clipboardTable: tableCopy });
+        this.setState({ clipboardTable: tableCopy, clipboardTextbox: null });
         console.log('Table copied to clipboard:', tableCopy);
-        
         return;
-      } else if (selectedTables.length > 1) {
-        console.log('Multiple tables selected - copy not supported');
+      } else if (selectedTextboxes.length === 1) {
+        const selectedTextbox = selectedTextboxes[0];
+        // Copy all relevant textbox properties
+        const textboxCopy = {
+          type: 'textbox',
+          text: selectedTextbox.text,
+          fontSize: selectedTextbox.fontSize,
+          fontWeight: selectedTextbox.fontWeight,
+          fontStyle: selectedTextbox.fontStyle,
+          width: selectedTextbox.width,
+          height: selectedTextbox.height,
+          hasStroke: selectedTextbox.hasStroke,
+          backgroundColor: selectedTextbox.backgroundColor,
+          textAlign: selectedTextbox.textAlign,
+          style: selectedTextbox.style
+        };
+        this.setState({ clipboardTextbox: textboxCopy, clipboardTable: null });
+        console.log('Textbox copied to clipboard:', textboxCopy);
+        return;
+      } else if (selectedTables.length > 1 || selectedTextboxes.length > 1) {
+        console.log('Multiple tables or textboxes selected - copy not supported');
         return;
       } else {
-        console.log('No table selected for copying');
+        console.log('No table or textbox selected for copying');
         return;
       }
     }
-    
+
     // Paste functionality (Cmd+V or Ctrl+V)
     if ((e.metaKey || e.ctrlKey) && e.key === 'v' && !isEditingText) {
       console.log('Paste command detected');
-      
+
+      // Paste table if present
       if (this.state.clipboardTable) {
         e.preventDefault();
         e.stopPropagation(); // Stop event propagation to prevent duplicate handling
-        
+
         // Prevent duplicate paste operations within 100ms
         const currentTime = Date.now();
         if (currentTime - this.lastPasteTime < 100) {
@@ -1043,16 +1063,16 @@ class WorksheetCanvas extends Component {
           return;
         }
         this.lastPasteTime = currentTime;
-        
+
         // Calculate position for pasted table
         const currentScrollY = window.scrollY || document.documentElement.scrollTop;
         const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
         const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
-        
+
         // Position table near current view, offset from the original
         const viewportHeight = window.innerHeight;
         let pasteY = relativeScrollY + (viewportHeight * 0.3);
-        
+
         // Add offset to avoid pasting directly on top of existing tables
         const existingTables = this.state.elements.filter(el => el.type === 'table');
         if (existingTables.length > 0) {
@@ -1060,30 +1080,30 @@ class WorksheetCanvas extends Component {
           const maxY = Math.max(...existingTables.map(table => table.y + table.rowHeight));
           pasteY = Math.max(pasteY, maxY + 50); // 50px spacing below the last table
         }
-        
+
         // Ensure the table stays within worksheet bounds
         const maxY = 2112 - 200; // Two-page height minus table height margin
         pasteY = Math.min(Math.max(60, pasteY), maxY);
-        
-        const pasteX = 24; // left margin
-        
+
+        const pasteX = 24; // 24 left margin - I changed to align with vertical line
+
         // Check for table alignment opportunities (only when snap-to-grid is off)
         const alignment = this.findTableAlignment(pasteY, pasteX, this.state.clipboardTable.width);
         if (alignment) {
           pasteY = alignment;
           console.log('Pasted table aligned to Y:', pasteY);
         }
-        
+
         // Create new table from clipboard
         const newTable = {
           ...this.state.clipboardTable,
           id: this.state.nextId,
-          x: pasteX,
+          x: 152,//pasteX,
           y: pasteY,
           isSelected: true, // Select the pasted table
           cellValues: Array(this.state.clipboardTable.columns).fill('') // Empty cells
         };
-        
+
         // Deselect all other elements and add the new table
         this.setState((prevState) => ({
           elements: [
@@ -1092,13 +1112,71 @@ class WorksheetCanvas extends Component {
           ],
           nextId: prevState.nextId + 1,
         }));
-        
+
         console.log('Table pasted:', newTable);
         return;
-      } else {
-        console.log('No table in clipboard to paste');
+      }
+
+      // Paste textbox if present
+      if (this.state.clipboardTextbox) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Prevent duplicate paste operations within 100ms
+        const currentTime = Date.now();
+        if (currentTime - this.lastPasteTime < 100) {
+          console.log('Duplicate paste prevented');
+          return;
+        }
+        this.lastPasteTime = currentTime;
+
+        // Calculate position for pasted textbox
+        const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+        const worksheetOffsetTop = this.contentRef.current?.offsetTop || 0;
+        const relativeScrollY = Math.max(0, currentScrollY - worksheetOffsetTop);
+
+        // Position textbox near current view, offset from the original
+        const viewportHeight = window.innerHeight;
+        let pasteY = relativeScrollY + (viewportHeight * 0.3);
+
+        // Add offset to avoid pasting directly on top of existing textboxes
+        const existingTextboxes = this.state.elements.filter(el => el.type === 'textbox');
+        if (existingTextboxes.length > 0) {
+          // Find the bottommost textbox and place new textbox below it
+          const maxY = Math.max(...existingTextboxes.map(tb => tb.y + (tb.height || 50)));
+          pasteY = Math.max(pasteY, maxY + 30); // 30px spacing below the last textbox
+        }
+
+        // Ensure the textbox stays within worksheet bounds
+        const maxY = 2112 - 100; // Two-page height minus textbox height margin
+        pasteY = Math.min(Math.max(60, pasteY), maxY);
+
+        const pasteX = 156; //24; // left margin
+
+        // Create new textbox from clipboard
+        const newTextbox = {
+          ...this.state.clipboardTextbox,
+          id: this.state.nextId,
+          x: pasteX,
+          y: pasteY,
+          isSelected: true
+        };
+
+        // Deselect all other elements and add the new textbox
+        this.setState((prevState) => ({
+          elements: [
+            ...prevState.elements.map(el => ({ ...el, isSelected: false })),
+            newTextbox
+          ],
+          nextId: prevState.nextId + 1,
+        }));
+
+        console.log('Textbox pasted:', newTextbox);
         return;
       }
+
+      console.log('No table or textbox in clipboard to paste');
+      return;
     }
     
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -1478,6 +1556,8 @@ class WorksheetCanvas extends Component {
         {selectedElement && (
           <TextFormatMenu
             key={selectedElement.id}
+            x={selectedElement.x + (selectedElement.width || 0) + 10}
+            y={selectedElement.y}
             fontSize={selectedElement.fontSize}
             fontWeight={selectedElement.fontWeight}
             fontStyle={selectedElement.fontStyle}

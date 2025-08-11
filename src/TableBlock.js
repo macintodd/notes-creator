@@ -403,11 +403,11 @@ export default function TableBlock({
         }}
       >
         <div className="table-drag-handle" style={{
-          width: 24,
+          width: 48,//was 24 shawn edit
           height: currentRowHeight + 20, // Add 20px for cell padding (16px) + cell borders (4px)
           background: 'var(--fall-light-taupe)',
           position: 'absolute',
-          left: -24,
+          left: -48,//was -24 shawn edit
           top: 0,
           cursor: 'grab',
           borderRight: '1px solid var(--fall-taupe)',
