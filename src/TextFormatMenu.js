@@ -93,8 +93,19 @@ class TextFormatMenu extends Component {
 
   render() {
     const { position, showColorPicker, centerText, fontSize } = this.state;
-    const { onClose, backgroundColor = 'transparent', hasStroke = false } = this.props;
+    const { onClose, backgroundColor = 'transparent', hasStroke = false, isTextbox = false, fontWeight = 'normal' } = this.props;
 
+    // Handler for bold toggle
+    const handleBoldToggle = () => {
+      if (this.props.onChange) {
+        this.props.onChange({
+          fontWeight: fontWeight === 'bold' ? 'normal' : 'bold',
+          fontSize: this.state.fontSize,
+          hasStroke: this.state.hasStroke,
+          backgroundColor: this.state.backgroundColor
+        });
+      }
+    };
 
     return (
       <div
@@ -321,27 +332,57 @@ class TextFormatMenu extends Component {
               </div>
             </div>
           </div>
-          {/* Font Size Section */}
-          <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
-            <span>Font Size</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
-                onClick={() => this.handleFontSizeChange(-1)}
-                title="Decrease font size"
-              >
-                –
-              </button>
-              <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{fontSize}</span>
-              <button
-                style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
-                onClick={() => this.handleFontSizeChange(2)}
-                title="Increase font size"
-              >
-                +
-              </button>
-            </div>
+        {/* Font Size Section */}
+        <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
+          <span>Font Size</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+              onClick={() => this.handleFontSizeChange(-1)}
+              title="Decrease font size"
+            >
+              –
+            </button>
+            <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{fontSize}</span>
+            <button
+              style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+              onClick={() => this.handleFontSizeChange(2)}
+              title="Increase font size"
+            >
+              +
+            </button>
           </div>
+        </div>
+
+        {/* Bold Toggle for Textboxes Only */}
+        {isTextbox && (
+          <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
+            <span>Bold</span>
+            <button
+              onClick={handleBoldToggle}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                border: fontWeight === 'bold' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
+                background: fontWeight === 'bold' ? 'var(--fall-burnt-orange)' : 'white',
+                color: fontWeight === 'bold' ? 'white' : 'var(--fall-taupe)',
+                fontWeight: 'bold',
+                fontSize: 18,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                outline: 'none',
+                boxShadow: fontWeight === 'bold' ? '0 0 0 2px var(--fall-burnt-orange33)' : 'none'
+              }}
+              title={fontWeight === 'bold' ? 'Bold On' : 'Bold Off'}
+            >
+              <b>B</b>
+            </button>
+          </div>
+        )}
           {/* Other menu content (background color, stroke, center, etc.) would go here */}
         </div>
       </div>

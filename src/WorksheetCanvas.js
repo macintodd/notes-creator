@@ -1563,14 +1563,25 @@ class WorksheetCanvas extends Component {
             fontStyle={selectedElement.fontStyle}
             hasStroke={selectedElement.hasStroke || false}
             backgroundColor={selectedElement.backgroundColor || 'transparent'}
+            isTextbox={selectedElement.type === 'textbox'}
             onChange={({ fontSize, fontWeight, fontStyle, hasStroke, backgroundColor }) => {
-              this.handleUpdateElement(selectedElement.id, {
-                fontSize,
-                fontWeight,
-                fontStyle,
-                hasStroke,
-                backgroundColor
-              });
+              // Only allow fontWeight change for textboxes
+              if (selectedElement.type === 'textbox') {
+                this.handleUpdateElement(selectedElement.id, {
+                  fontSize,
+                  fontWeight,
+                  fontStyle,
+                  hasStroke,
+                  backgroundColor
+                });
+              } else {
+                this.handleUpdateElement(selectedElement.id, {
+                  fontSize,
+                  fontStyle,
+                  hasStroke,
+                  backgroundColor
+                });
+              }
             }}
             allowBackgroundOptions={true}
             allowStrokeToggle={true}
