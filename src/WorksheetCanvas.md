@@ -1,0 +1,393 @@
+```javascript
+import React, { Component } from 'react';
+
+class TextFormatMenu extends Component {
+  dragOffset = null;
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      position: { x: props.x || 0, y: props.y || 0 },
+      showColorPicker: false,
+      centerText: !!props.textAlign && props.textAlign === 'center',
+      fontSize: typeof props.fontSize === 'number' ? props.fontSize : (parseInt(props.fontSize, 10) || 14),
+      hasStroke: !!props.hasStroke,
+      backgroundColor: props.backgroundColor || 'transparent',
+    };
+    this.menuRef = React.createRef();
+    this.dragOffset = null;
+  }
+
+  handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const { position } = this.state;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    this.dragOffset = {
+      x: startX - position.x,
+      y: startY - position.y
+    };
+    document.addEventListener('mousemove', this.handleMouseMove);
+    document.addEventListener('mouseup', this.handleMouseUp);
+  };
+
+  handleMouseMove = (e) => {
+    if (!this.dragOffset) return;
+    const newX = e.clientX - this.dragOffset.x;
+    const newY = e.clientY - this.dragOffset.y;
+    this.setState({ position: { x: newX, y: newY } });
+  };
+
+  handleMouseUp = () => {
+    this.dragOffset = null;
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.handleMouseUp);
+  };
+
+  handleBackgroundColorChange = (color) => {
+    this.setState({ backgroundColor: color }, () => {
+      if (this.props.onChange) {
+        this.props.onChange({
+          backgroundColor: color,
+          fontSize: this.state.fontSize,
+          hasStroke: this.state.hasStroke
+        });
+      }
+    });
+  };
+
+  toggleColorPicker = () => {
+    this.setState((prevState) => ({ showColorPicker: !prevState.showColorPicker }));
+  };
+
+  handleStrokeToggle = () => {
+    this.setState(
+      prevState => ({ hasStroke: !prevState.hasStroke }),
+      () => {
+        if (this.props.onChange) {
+          this.props.onChange({
+            hasStroke: this.state.hasStroke,
+            backgroundColor: this.state.backgroundColor,
+            fontSize: this.state.fontSize
+          });
+        }
+      }
+    );
+  };
+
+  handleFontSizeChange = (delta) => {
+    this.setState(prevState => {
+      let newFontSize = (prevState.fontSize || 14) + delta;
+      if (newFontSize < 6) newFontSize = 6;
+      if (newFontSize > 200) newFontSize = 200;
+      if (this.props.onChange) {
+        this.props.onChange({
+          fontSize: newFontSize,
+          backgroundColor: this.state.backgroundColor,
+          hasStroke: this.state.hasStroke
+        });
+      }
+      return { fontSize: newFontSize };
+    });
+  }
+
+  render() {
+    const { position, showColorPicker, centerText, fontSize } = this.state;
+    const { onClose, backgroundColor = 'transparent', hasStroke = false, isTextbox = false, fontWeight = 'normal' } = this.props;
+
+    // Handler for bold toggle
+    const handleBoldToggle = () => {
+      if (this.props.onChange) {
+        this.props.onChange({
+          fontWeight: fontWeight === 'bold' ? 'normal' : 'bold',
+          fontSize: this.state.fontSize,
+          hasStroke: this.state.hasStroke,
+          backgroundColor: this.state.backgroundColor
+        });
+      }
+    };
+
+    return (
+      <div
+        ref={this.menuRef}
+        data-text-format-menu="true"
+        style={{
+          position: 'absolute',
+          left: position.x,
+          top: position.y,
+          backgroundColor: 'var(--fall-cream)',
+          border: '1px solid var(--fall-taupe)',
+          borderRadius: '6px',
+          boxShadow: '0 4px 12px rgba(62, 39, 35, 0.15)',
+          zIndex: 200, // Above everything else
+          minWidth: '160px',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontSize: '14px'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Draggable header */}
+        <div
+          className="menu-header"
+          style={{
+            padding: '8px 12px',
+            backgroundColor: 'var(--fall-light-taupe)',
+            borderBottom: '1px solid var(--fall-taupe)',
+            borderRadius: '6px 6px 0 0',
+            cursor: 'move',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            userSelect: 'none'
+          }}
+          onMouseDown={this.handleMouseDown}
+        >
+          <span style={{ fontWeight: '500' }}>Text Format</span>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '16px',
+              cursor: 'pointer',
+              padding: '0',
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Snap to Grid Controls (STG, Horiz, Vert) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, margin: '8px 0 0 8px' }}>
+          <label style={{ userSelect: 'none', fontWeight: 500, marginBottom: 2 }}>
+            <input
+              type="checkbox"
+              checked={this.props.snapToGrid}
+              onChange={e => this.props.onSnapToGridChange?.(e.target.checked)}
+              style={{ marginRight: 4 }}
+            />
+            STG (Snap to Grid)
+          </label>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginLeft: 2 }}>
+            <label style={{ userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={this.props.snapToGridHorizontal}
+                onChange={e => this.props.onSnapToGridHorizontalChange?.(e.target.checked)}
+              />
+              Horiz
+            </label>
+            <label style={{ userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                checked={this.props.snapToGridVertical}
+                onChange={e => this.props.onSnapToGridVerticalChange?.(e.target.checked)}
+              />
+              Vert
+            </label>
+          </div>
+        </div>
+
+        {/* Menu content */}
+        <div style={{ padding: '8px' }}>
+          {/* Background Color Section */}
+          <div style={{ marginBottom: '8px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: this.state.showColorPicker ? 'var(--fall-sage)' : 'transparent'
+              }}
+              onClick={this.toggleColorPicker}
+            >
+              <span>Background Color</span>
+              <div
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '3px',
+                  border: '1px solid var(--fall-light-taupe)',
+                  backgroundColor: backgroundColor === 'transparent' ? 'transparent' : backgroundColor,
+                  background: backgroundColor === 'transparent'
+                    ? 'linear-gradient(45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(-45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fall-light-taupe) 75%), linear-gradient(-45deg, transparent 75%, var(--fall-light-taupe) 75%)'
+                    : backgroundColor,
+                  backgroundSize: backgroundColor === 'transparent' ? '8px 8px' : 'auto',
+                  backgroundPosition: backgroundColor === 'transparent' ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'auto'
+                }}
+              />
+            </div>
+            {this.state.showColorPicker && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px',
+                backgroundColor: 'var(--fall-sage)',
+                borderRadius: '4px'
+              }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Transparent option */}
+                  <div
+                    onClick={() => this.handleBackgroundColorChange('transparent')}
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '4px',
+                      border: backgroundColor === 'transparent' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
+                      cursor: 'pointer',
+                      background: 'linear-gradient(45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(-45deg, var(--fall-light-taupe) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--fall-light-taupe) 75%), linear-gradient(-45deg, transparent 75%, var(--fall-light-taupe) 75%)',
+                      backgroundSize: '8px 8px',
+                      backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+                      position: 'relative'
+                    }}
+                    title="Transparent"
+                  >
+                    {backgroundColor === 'transparent' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        fontSize: '16px',
+                        color: 'var(--fall-burnt-orange)',
+                        fontWeight: 'bold'
+                      }}>
+                        ✓
+                      </div>
+                    )}
+                  </div>
+                  {/* White option */}
+                  <div
+                    onClick={() => this.handleBackgroundColorChange('white')}
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '4px',
+                      border: backgroundColor === 'white' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="White"
+                  >
+                    {backgroundColor === 'white' && (
+                      <span style={{ color: 'var(--fall-burnt-orange)', fontWeight: 'bold' }}>✓</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Stroke Toggle Section */}
+          <div style={{ marginBottom: '8px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: 'transparent'
+              }}
+              onClick={this.handleStrokeToggle}
+            >
+              <span>Text Stroke</span>
+              {/* Toggle Switch */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '40px',
+                  height: '20px',
+                  backgroundColor: hasStroke ? 'var(--fall-burnt-orange)' : 'var(--fall-light-taupe)',
+                  borderRadius: '10px',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+              >
+                {/* Toggle Circle */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '2px',
+                    left: hasStroke ? '20px' : '2px',
+                    width: '16px',
+                    height: '16px',
+                    backgroundColor: 'white',
+                    borderRadius: '50%',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        {/* Font Size Section */}
+        <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
+          <span>Font Size</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+              onClick={() => this.handleFontSizeChange(-1)}
+              title="Decrease font size"
+            >
+              –
+            </button>
+            <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{fontSize}</span>
+            <button
+              style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid var(--fall-taupe)', background: 'white', cursor: 'pointer', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}
+              onClick={() => this.handleFontSizeChange(2)}
+              title="Increase font size"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* Bold Toggle for Textboxes Only */}
+        {isTextbox && (
+          <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '4px', backgroundColor: 'transparent' }}>
+            <span>Bold</span>
+            <button
+              onClick={handleBoldToggle}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                border: fontWeight === 'bold' ? '2px solid var(--fall-burnt-orange)' : '1px solid var(--fall-taupe)',
+                background: fontWeight === 'bold' ? 'var(--fall-burnt-orange)' : 'white',
+                color: fontWeight === 'bold' ? 'white' : 'var(--fall-taupe)',
+                fontWeight: 'bold',
+                fontSize: 18,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                outline: 'none',
+                boxShadow: fontWeight === 'bold' ? '0 0 0 2px var(--fall-burnt-orange33)' : 'none'
+              }}
+              title={fontWeight === 'bold' ? 'Bold On' : 'Bold Off'}
+            >
+              <b>B</b>
+            </button>
+          </div>
+        )}
+          {/* Other menu content (background color, stroke, center, etc.) would go here */}
+        </div>
+      </div>
+    );
+  }
+}
+
+export default TextFormatMenu;

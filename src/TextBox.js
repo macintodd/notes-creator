@@ -487,8 +487,9 @@ class TextBox extends Component {
               onInput={this.handleInput}
               onBlur={this.handleBlur}
               onKeyDown={this.handleKeyDown}
-              dangerouslySetInnerHTML={{ __html: this.props.text || '' }}
-            />
+            >
+              {/* Content will be set via innerHTML only when entering edit mode */}
+            </div>
           ) : (
             <>
               {/* Hide the contentEditable div when not editing */}
@@ -502,7 +503,7 @@ class TextBox extends Component {
                   left: '-9999px'
                 }}
               />
-              {/* Display div for rendered content */}
+              {/* Display div for rendered content with LaTeX support */}
               <div
                 style={{
                   width: '100%',
@@ -511,8 +512,9 @@ class TextBox extends Component {
                   whiteSpace: 'pre-wrap',
                   overflowWrap: 'break-word'
                 }}
-                dangerouslySetInnerHTML={{ __html: text || '' }}
-              />
+              >
+                {this.parseAndRenderText(text)}
+              </div>
             </>
           )}
           {this.renderHandles()}
