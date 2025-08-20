@@ -5,6 +5,56 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
 class TextBox extends Component {
+  processLatexInDisplayDiv = () => {
+    if (!this.displayRef.current) return;
+    // Find all text nodes with $$...$$ and replace with KaTeX
+    const walk = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const latexRegex = /\$\$(.+?)\$\$/g;
+        let match;
+        let lastIndex = 0;
+        const fragments = [];
+        let text = node.textContent;
+        while ((match = latexRegex.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            fragments.push(document.createTextNode(text.slice(lastIndex, match.index)));
+          }
+          // Render KaTeX
+          const span = document.createElement('span');
+          try {
+            span.innerHTML = katex.renderToString(match[1], { displayMode: false, throwOnError: false });
+          } catch (e) {
+            span.textContent = match[0];
+          }
+          fragments.push(span);
+          lastIndex = match.index + match[0].length;
+        }
+        // Always handle trailing text (even if empty)
+        if (lastIndex <= text.length) {
+          fragments.push(document.createTextNode(text.slice(lastIndex)));
+        }
+        if (fragments.length > 1 || (fragments.length === 1 && fragments[0].textContent !== text)) {
+          const parent = node.parentNode;
+          fragments.forEach(frag => parent.insertBefore(frag, node));
+          parent.removeChild(node);
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        Array.from(node.childNodes).forEach(walk);
+      }
+    };
+    walk(this.displayRef.current);
+  };
+  componentDidMount() {
+    window.addEventListener('mousedown', this.handleClickOutside);
+    document.addEventListener('mousemove', this.handleGlobalMouseMove);
+    document.addEventListener('mouseup', this.handleGlobalMouseUp);
+    if (this.state.isEditing && this.props.initiallyEditing) {
+      this.focusAtEnd();
+    }
+    if (!this.state.isEditing) {
+      this.processLatexInDisplayDiv();
+    }
+  }
   // Handle mousedown on a resize handle
   handleResizeMouseDown = (e, handle) => {
     e.stopPropagation();
@@ -67,8 +117,9 @@ class TextBox extends Component {
       showFormatMenu: false,
     };
 
-    this.textRef = createRef();
-    this.boxRef = createRef();
+  this.textRef = createRef();
+  this.displayRef = createRef();
+  this.boxRef = createRef();
   }
 
   componentDidMount() {
@@ -81,20 +132,17 @@ class TextBox extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Only update the contentEditable if we're not editing and the text changed
-    // REMOVED: This line was causing the issue by setting textContent in the non-editing display div
-    // if (prevProps.text !== this.props.text && !this.state.isEditing && this.textRef.current) {
-    //   this.textRef.current.textContent = this.props.text || '';
-    // }
-    
     // Show format menu when text box becomes selected
     if (!prevProps.isSelected && this.props.isSelected && !this.state.isEditing) {
-      this.setState({ showFormatMenu: false });/*I changed to false*/
+      this.setState({ showFormatMenu: false });
     }
-    
     // Hide format menu when text box becomes unselected
     if (prevProps.isSelected && !this.props.isSelected) {
       this.setState({ showFormatMenu: false });
+    }
+    // Always process LaTeX after update if not editing
+    if (!this.state.isEditing) {
+      this.processLatexInDisplayDiv();
     }
   }
 
@@ -503,18 +551,19 @@ class TextBox extends Component {
                   left: '-9999px'
                 }}
               />
-              {/* Display div for rendered content with LaTeX support */}
+              {/* Display div for rendered HTML content and LaTeX */}
               <div
+                ref={this.displayRef}
                 style={{
                   width: '100%',
                   height: '100%',
                   fontSize,
                   whiteSpace: 'pre-wrap',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  pointerEvents: 'none'
                 }}
-              >
-                {this.parseAndRenderText(text)}
-              </div>
+                dangerouslySetInnerHTML={{ __html: text || '' }}
+              />
             </>
           )}
           {this.renderHandles()}

@@ -282,7 +282,7 @@ class WorksheetCanvas extends Component {
   checkTableAlignmentOnDrag = (tableId, newY) => {
     if (this.props.snapToGrid) return newY; // Only work when snap-to-grid is off
     
-    const ALIGNMENT_THRESHOLD = 25; // Increased threshold to match visual gap
+    const ALIGNMENT_THRESHOLD = 25; //shawnChange was 25// Increased threshold to match visual gap
     // Account for: cell padding (8px top + 8px bottom) + cell borders (2px top + 2px bottom) = 20px
     // Plus table wrapper border (1px) = 21px total visual height beyond rowHeight
     const VISUAL_HEIGHT_ADDITION = 20; // Cell padding + borders
@@ -393,7 +393,7 @@ class WorksheetCanvas extends Component {
     const tableCount = this.state.elements.filter(el => el.type === 'table').length;
     
     // Position table to the right of vertical guide line (requirement #7)
-    let tableX = this.state.verticalGuideLineX + 5; // 10px margin from guide line
+    let tableX = this.state.verticalGuideLineX + 2; //shawn was +5// 10px margin from guide line
     
     // Calculate position based on current scroll position
     const currentScrollY = window.scrollY || document.documentElement.scrollTop;
